@@ -151,6 +151,14 @@ label.field{display:block;font-size:13px;font-weight:700;letter-spacing:.04em;te
 .tempo-row .nm{flex:1;font-weight:600;font-size:14.5px}
 .tempo-row .secs{font-size:13.5px;color:var(--stone);font-variant-numeric:tabular-nums}
 
+.shame-box{
+  display:flex;align-items:center;gap:14px;background:var(--coral-50);border:1px solid var(--coral-100);
+  border-radius:var(--radius-lg);padding:14px 16px;margin:16px 0 0;
+}
+.shame-img{flex:none;width:64px;height:auto;border-radius:var(--radius-sm)}
+.shame-text{margin:0;font-size:14.5px;color:var(--coral-700);line-height:1.5}
+.shame-text b{color:var(--ink)}
+
 .opt-list{display:flex;flex-direction:column;gap:10px;margin:16px 0 20px}
 .opt{
   display:flex;align-items:center;gap:12px;text-align:left;width:100%;
@@ -480,6 +488,7 @@ function attachRoomListeners(){
       game.hasSubmittedVote = false;
       game.selectedGroupId = null;
       game.bluffInputVal = '';
+      syncOwnSubmissionStatus();
     }
     if(game.isHost) maybeAttachHostAggregation();
     render();
@@ -494,6 +503,31 @@ function attachRoomListeners(){
     game.ownPlayer = snap.exists() ? snap.data() : null;
     render();
   });
+}
+
+// Recovers hasSubmittedBluff/hasSubmittedVote after a reload, so a player who
+// already answered doesn't get shown the input form again.
+async function syncOwnSubmissionStatus(){
+  if(!game.room || !game.code) return;
+  const roundIndex = game.room.roundIndex;
+  try{
+    if(game.room.phase === 'bluff' && !game.hasSubmittedBluff){
+      const snap = await getDoc(doc(db, 'rooms', game.code, 'rounds', String(roundIndex), 'bluffs', uid));
+      if(snap.exists() && game.room && game.room.roundIndex === roundIndex && game.room.phase === 'bluff'){
+        game.hasSubmittedBluff = true;
+        render();
+      }
+    } else if(game.room.phase === 'vote' && !game.hasSubmittedVote){
+      const snap = await getDoc(doc(db, 'rooms', game.code, 'rounds', String(roundIndex), 'votes', uid));
+      if(snap.exists() && game.room && game.room.roundIndex === roundIndex && game.room.phase === 'vote'){
+        game.hasSubmittedVote = true;
+        render();
+      }
+    }
+  }catch(e){
+    // Old security rules not updated yet, or offline — fall back gracefully
+    // to showing the input form (worst case: a harmless re-submit prompt).
+  }
 }
 
 let hostAggState = { round: null, phase: null };
@@ -886,6 +920,10 @@ function renderReveal(){
   const isLast = game.room.roundIndex >= game.room.totalRounds - 1;
   const q = game.room.question;
 
+  const wrongVoterNames = Array.from(new Set(
+    rv.groups.filter(g => !g.isTruth).flatMap(g => g.voterNames || [])
+  ));
+
   return `
     ${topBar()}
     <p class="progress">Auflösung &middot; Frage ${game.room.roundIndex+1} von ${game.room.totalRounds}</p>
@@ -894,6 +932,44 @@ function renderReveal(){
       <p class="q-text">${fmt(rv.answer)}${q.unit?(' '+escapeHtml(q.unit)):''}</p>
       ${rv.explanation ? `<p class="q-explain">${escapeHtml(rv.explanation)}</p>` : ''}
     </div>
+
+    ${rv.timings && rv.timings.length > 1 ? `
+      <h2 style="font-family:var(--font-sans);font-size:16px;margin:16px 0 8px">Tempo-Check</h2>
+      <div class="tempo-list">
+        ${rv.timings.map((t,i) => {
+          const isFastest = i === 0;
+          const isSlowest = i === rv.timings.length - 1;
+          const emoji = isSlowest ? '🦥' : (isFastest ? '⚡' : '');
+          return `
+            <div class="tempo-row">
+              <span class="badge-emoji">${emoji}</span>
+              <span class="nm">${escapeHtml(t.name)}${isSlowest?' <span style="font-weight:400;color:var(--stone)">&mdash; Faultier der Runde</span>':''}</span>
+              <span class="secs">${(t.ms/1000).toFixed(1)}s</span>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    ` : ''}
+
+    <h2 style="font-family:var(--font-sans);font-size:16px;margin:16px 0 8px">Punktestand</h2>
+    <div class="score-list">
+      ${scoreOrder.map(({p,delta})=>`
+        <div class="score-row">
+          <span class="nm">${escapeHtml(p.name)}</span>
+          <span class="pts">${p.score}</span>
+          ${delta>0?`<span class="delta">+${delta}</span>`:''}
+        </div>
+      `).join('')}
+    </div>
+
+    ${wrongVoterNames.length ? `
+      <div class="shame-box">
+        <img src="assets/geleanarscht.jpeg" alt="GeLeanArscht" class="shame-img">
+        <p class="shame-text">Reingefallen: <b>${wrongVoterNames.map(escapeHtml).join(', ')}</b></p>
+      </div>
+    ` : ''}
+
+    <h2 style="font-family:var(--font-sans);font-size:16px;margin:20px 0 8px">Antworten im Detail</h2>
     ${sortedGroups.map(g => `
       <div class="rv-item ${g.isTruth?'truth':''}">
         <div class="rv-top">
@@ -911,35 +987,6 @@ function renderReveal(){
         </p>
       </div>
     `).join('')}
-
-    ${rv.timings && rv.timings.length > 1 ? `
-      <h2 style="font-family:var(--font-sans);font-size:16px;margin:20px 0 8px">Tempo-Check</h2>
-      <div class="tempo-list">
-        ${rv.timings.map((t,i) => {
-          const isFastest = i === 0;
-          const isSlowest = i === rv.timings.length - 1;
-          const emoji = isSlowest ? '🦥' : (isFastest ? '⚡' : '');
-          return `
-            <div class="tempo-row">
-              <span class="badge-emoji">${emoji}</span>
-              <span class="nm">${escapeHtml(t.name)}${isSlowest?' <span style="font-weight:400;color:var(--stone)">&mdash; Faultier der Runde</span>':''}</span>
-              <span class="secs">${(t.ms/1000).toFixed(1)}s</span>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    ` : ''}
-
-    <h2 style="font-family:var(--font-sans);font-size:16px;margin:20px 0 8px">Punktestand</h2>
-    <div class="score-list">
-      ${scoreOrder.map(({p,delta})=>`
-        <div class="score-row">
-          <span class="nm">${escapeHtml(p.name)}</span>
-          <span class="pts">${p.score}</span>
-          ${delta>0?`<span class="delta">+${delta}</span>`:''}
-        </div>
-      `).join('')}
-    </div>
 
     <div style="height:18px"></div>
     ${game.isHost ? `
