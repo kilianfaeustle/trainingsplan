@@ -675,11 +675,18 @@ async function tryCloseBluffPhase(bluffSnap){
   game.roundTimings = timings;
   persistHostRecovery();
 
+  const timingByUid = new Map(timings.map(t => [t.uid, t.ms]));
+
   const batch = writeBatch(db);
   const eligibleVoterUids = [];
   for(const p of game.players){
     const ownIds = groupsFull.filter(g => g.authorUids.includes(p.id)).map(g => g.id);
-    batch.set(doc(db, 'rooms', game.code, 'players', p.id), { ownGroupIds: ownIds }, { merge: true });
+    const update = { ownGroupIds: ownIds };
+    if(timingByUid.has(p.id)){
+      update.totalAnswerMs = increment(timingByUid.get(p.id));
+      update.answeredRounds = increment(1);
+    }
+    batch.set(doc(db, 'rooms', game.code, 'players', p.id), update, { merge: true });
     if(ownIds.length < groupsFull.length) eligibleVoterUids.push(p.id);
   }
   batch.set(doc(db, 'rooms', game.code), {
@@ -1127,6 +1134,12 @@ function renderReveal(){
 function renderFinal(){
   const ranked = game.players.slice().sort((a,b)=>b.score-a.score);
   const medals = ['🥇','🥈','🥉'];
+
+  const withTiming = game.players
+    .filter(p => p.answeredRounds > 0)
+    .map(p => ({ p, avgMs: p.totalAnswerMs / p.answeredRounds }))
+    .sort((a,b) => a.avgMs - b.avgMs);
+
   return `
     ${topBar()}
     <div class="center">
@@ -1143,6 +1156,27 @@ function renderFinal(){
         </div>
       `).join('')}
     </div>
+
+    ${withTiming.length > 1 ? `
+      <div class="tempo-card" style="margin-top:20px">
+        <h2 style="font-family:var(--font-sans);font-size:16px;margin:0 0 10px">⏱️ Tempo über den ganzen Abend</h2>
+        <div class="tempo-list">
+          ${withTiming.map(({p,avgMs},i) => {
+            const isFastest = i === 0;
+            const isSlowest = i === withTiming.length - 1;
+            const emoji = isSlowest ? '🦥' : (isFastest ? '⚡' : '');
+            return `
+              <div class="tempo-row">
+                <span class="badge-emoji">${emoji}</span>
+                <span class="nm">${escapeHtml(p.name)}${isSlowest?' <span style="font-weight:400;color:var(--stone)">&mdash; Faultier des Abends</span>':''}</span>
+                <span class="secs">${(avgMs/1000).toFixed(1)}s Ø</span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    ` : ''}
+
     <div style="height:20px"></div>
     <button class="btn" onclick="window.__np.leaveGame()">Neues Spiel</button>
   `;
