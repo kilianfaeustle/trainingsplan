@@ -360,6 +360,18 @@ function drawQuestions(pool, poolKey, count){
   return result;
 }
 
+// Builds a round list. When spicyOn, a guaranteed share of the questions come
+// from the spicy deck (drawn independently, so it rotates on its own) rather
+// than leaving it to chance whether any spicy question shows up at all.
+function buildRounds(count, spicyOn){
+  if(!spicyOn) return drawQuestions(QUESTIONS, 'base', count);
+  const spicyCount = Math.min(SPICY_QUESTIONS.length, Math.max(1, Math.round(count * 0.35)));
+  const baseCount = count - spicyCount;
+  const spicyPicks = drawQuestions(SPICY_QUESTIONS, 'spicy', spicyCount);
+  const basePicks = drawQuestions(QUESTIONS, 'base', baseCount);
+  return shuffle(spicyPicks.concat(basePicks));
+}
+
 function fmt(n){ return Number(n).toLocaleString('de-DE'); }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no O/0, I/1
@@ -394,6 +406,7 @@ let game = {
   bluffInputVal: '',
   readyUids: [],       // live: who has confirmed they've seen this round's reveal
   hasMarkedReady: false,
+  readyRuleMissing: false, // true if the Firestore "ready" rule hasn't been published yet
 };
 
 function persistHostRecovery(){
@@ -460,10 +473,9 @@ async function createRoom(){
   const name = ($('create-name').value || '').trim();
   if(!name) return;
   const spicyOn = $('spicy-toggle') ? $('spicy-toggle').checked : false;
-  const pool = spicyOn ? QUESTIONS.concat(SPICY_QUESTIONS) : QUESTIONS;
-  const poolKey = spicyOn ? 'spicy' : 'base';
-  const count = $('rounds-select').value === 'all' ? pool.length : Math.min(parseInt($('rounds-select').value,10), pool.length);
-  const localRounds = drawQuestions(pool, poolKey, count);
+  const poolSize = spicyOn ? QUESTIONS.length + SPICY_QUESTIONS.length : QUESTIONS.length;
+  const count = $('rounds-select').value === 'all' ? poolSize : Math.min(parseInt($('rounds-select').value,10), poolSize);
+  const localRounds = buildRounds(count, spicyOn);
 
   let code = null;
   for(let attempt=0; attempt<8; attempt++){
@@ -606,10 +618,17 @@ function maybeAttachReadyListener(){
   if(readyListenerState.key === key) return;
   readyListenerState.key = key;
   if(unsubReady){ unsubReady(); unsubReady = null; }
-  unsubReady = onSnapshot(collection(db, 'rooms', game.code, 'rounds', String(game.room.roundIndex), 'ready'), (snap) => {
-    game.readyUids = snap.docs.map(d => d.id);
-    render();
-  });
+  unsubReady = onSnapshot(collection(db, 'rooms', game.code, 'rounds', String(game.room.roundIndex), 'ready'),
+    (snap) => {
+      game.readyUids = snap.docs.map(d => d.id);
+      game.readyRuleMissing = false;
+      render();
+    },
+    (err) => {
+      game.readyRuleMissing = true;
+      render();
+    }
+  );
 }
 
 async function markReady(){
@@ -617,8 +636,12 @@ async function markReady(){
   try{
     await setDoc(doc(db, 'rooms', game.code, 'rounds', String(game.room.roundIndex), 'ready', uid), { readyAt: serverTimestamp() });
     game.hasMarkedReady = true;
+    game.readyRuleMissing = false;
     render();
-  }catch(e){ /* rule not updated yet — ignore, button stays visible */ }
+  }catch(e){
+    game.readyRuleMissing = true;
+    render();
+  }
 }
 
 let hostAggState = { round: null, phase: null };
@@ -1045,12 +1068,16 @@ function renderReveal(){
     ${topBar()}
     <p class="progress">Auflösung &middot; Frage ${game.room.roundIndex+1} von ${game.room.totalRounds}</p>
 
-    <div class="ready-bar">
-      <span class="ready-count">${readyCount}/${totalPlayers} bereit für die nächste Frage</span>
-      ${game.hasMarkedReady
-        ? '<span class="ready-done">&#10003; Du bist bereit</span>'
-        : '<button class="btn coral small" onclick="window.__np.markReady()">&#10003; Ich bin bereit</button>'}
-    </div>
+    ${game.readyRuleMissing ? `
+      <div class="error-box">⚠️ Die "Bereit"-Funktion ist noch nicht freigeschaltet: die Firestore-Regel für <code>ready</code> fehlt noch in der Firebase Console. Bis dahin bleibt nur "Trotzdem überspringen".</div>
+    ` : `
+      <div class="ready-bar">
+        <span class="ready-count">${readyCount}/${totalPlayers} bereit für die nächste Frage</span>
+        ${game.hasMarkedReady
+          ? '<span class="ready-done">&#10003; Du bist bereit</span>'
+          : '<button class="btn coral small" onclick="window.__np.markReady()">&#10003; Ich bin bereit</button>'}
+      </div>
+    `}
 
     <div class="q-box">
       <p class="q-eyebrow">Richtige Antwort</p>
