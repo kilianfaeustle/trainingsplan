@@ -790,12 +790,13 @@ async function submitVote(){
   render();
 }
 
-async function nextRound(){
+async function nextRound(force){
   if(!game.isHost || !game.room || game.room.phase !== 'reveal') return;
   const readyCount = (game.readyUids || []).length;
   const total = game.players.length;
-  if(readyCount < total){
-    const proceed = confirm(`Erst ${readyCount} von ${total} sind bereit für die nächste Frage. Trotzdem weiter?`);
+  if(!force && readyCount < total) return;
+  if(force && readyCount < total){
+    const proceed = confirm(`Immer noch nicht alle bereit (${readyCount}/${total}). Trotzdem überspringen?`);
     if(!proceed) return;
   }
   const nextIndex = game.room.roundIndex + 1;
@@ -1109,12 +1110,15 @@ function renderReveal(){
 
     <div style="height:18px"></div>
     ${game.isHost ? `
-      <button class="btn" onclick="window.__np.nextRound()">${isLast?'Endergebnis anzeigen':'Nächste Frage'} &rarr;</button>
+      <button class="btn" ${readyCount<totalPlayers?'disabled':''} onclick="window.__np.nextRound()">
+        ${readyCount<totalPlayers ? `Warte auf alle (${readyCount}/${totalPlayers} bereit)` : (isLast?'Endergebnis anzeigen':'Nächste Frage &rarr;')}
+      </button>
+      ${readyCount<totalPlayers ? `<p style="text-align:center;margin:10px 0 0"><button class="link-btn" onclick="window.__np.nextRound(true)">Trotzdem überspringen</button></p>` : ''}
     ` : `
       <div class="wait-screen">
         <div class="wait-icon">⏳</div>
         <p class="wait-title">Warte auf den Host</p>
-        <p class="wait-hint">Der Host macht mit der nächsten Frage weiter.</p>
+        <p class="wait-hint">Der Host macht mit der nächsten Frage weiter, sobald alle bereit sind.</p>
       </div>
     `}
   `;
