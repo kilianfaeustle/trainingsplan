@@ -133,7 +133,23 @@ label.field{display:block;font-size:13px;font-weight:700;letter-spacing:.04em;te
 }
 .q-box .q-eyebrow{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--sage-700);margin:0 0 8px}
 .q-box .q-text{font-size:19px;font-weight:600;line-height:1.4;color:var(--ink);margin:0}
+.q-box .q-explain{font-size:14px;color:var(--sage-700);line-height:1.5;margin:8px 0 0;padding-top:8px;border-top:1px solid var(--sage-100)}
 .unit-suffix{font-size:14px;color:var(--stone);margin:8px 2px 0}
+
+.presence-list{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 20px}
+.presence-chip{
+  display:inline-flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--border);
+  border-radius:var(--radius-pill);padding:7px 13px;font-size:14px;font-weight:600;color:var(--stone-light);
+}
+.presence-chip.done{background:var(--sage-50);border-color:var(--sage-100);color:var(--sage-700)}
+.presence-chip .dot{width:8px;height:8px;border-radius:50%;background:var(--stone-light);flex:none}
+.presence-chip.done .dot{background:var(--sage-500)}
+
+.tempo-list{display:flex;flex-direction:column;gap:6px;margin:10px 0 0}
+.tempo-row{display:flex;align-items:center;gap:10px;background:var(--paper);border-radius:var(--radius-md);padding:9px 13px}
+.tempo-row .badge-emoji{flex:none;font-size:16px;width:20px;text-align:center}
+.tempo-row .nm{flex:1;font-weight:600;font-size:14.5px}
+.tempo-row .secs{font-size:13.5px;color:var(--stone);font-variant-numeric:tabular-nums}
 
 .opt-list{display:flex;flex-direction:column;gap:10px;margin:16px 0 20px}
 .opt{
@@ -241,40 +257,40 @@ const $ = id => document.getElementById(id);
 const appEl = $('app');
 
 const QUESTIONS = [
-  {q:"Wie viele Treppenstufen hat der Eiffelturm?", a:1665, unit:"Stufen"},
-  {q:"Wie hoch ist der Mount Everest (in Metern)?", a:8849, unit:"m"},
-  {q:"Wie viele Knochen hat ein erwachsener Mensch?", a:206, unit:"Knochen"},
-  {q:"Wie lang ist die Chinesische Mauer (in km)?", a:21196, unit:"km"},
-  {q:"Wie lang ist der Nil, der längste Fluss der Welt (in km)?", a:6650, unit:"km"},
-  {q:"Wie viele Herzen hat ein Oktopus?", a:3, unit:"Herzen"},
-  {q:"Wie schnell kann ein Gepard maximal laufen (in km/h)?", a:110, unit:"km/h"},
-  {q:"Wie viele Länder sind aktuell Mitglied der Vereinten Nationen?", a:193, unit:"Länder"},
-  {q:"Wie viele Zeitzonen hat Russland?", a:11, unit:"Zeitzonen"},
-  {q:"Wie hoch ist der Burj Khalifa in Dubai, das höchste Gebäude der Welt (in Metern)?", a:828, unit:"m"},
-  {q:"In welchem Jahr wurde der Eiffelturm fertiggestellt?", a:1889, unit:""},
-  {q:"Wie groß ist Deutschland (in km²)?", a:357600, unit:"km²"},
-  {q:"Wie hoch ist die Zugspitze, Deutschlands höchster Berg (in Metern)?", a:2962, unit:"m"},
-  {q:"Wie weit ist der Mond im Schnitt von der Erde entfernt (in km)?", a:384400, unit:"km"},
-  {q:"Wie viele Monde hat der Jupiter nach heutigem Kenntnisstand?", a:95, unit:"Monde"},
-  {q:"Wie alt kann eine Galapagos-Riesenschildkröte maximal werden (in Jahren)?", a:150, unit:"Jahre"},
-  {q:"Wie viele Zähne hat ein erwachsener Mensch inklusive Weisheitszähnen?", a:32, unit:"Zähne"},
-  {q:"Wie viele Muskeln hat der Mensch ungefähr im Gesicht?", a:43, unit:"Muskeln"},
-  {q:"Wie viele Liter Blut pumpt das menschliche Herz ungefähr pro Tag?", a:7500, unit:"Liter"},
-  {q:"Wie viele Eier legt ein Huhn im Schnitt pro Jahr?", a:300, unit:"Eier"},
-  {q:"Wie viele Kilometer Blutgefäße hat der menschliche Körper ungefähr?", a:100000, unit:"km"},
-  {q:"Wie viele Menschen leben ungefähr im Großraum Tokio (in Millionen)?", a:37, unit:"Mio."},
-  {q:"Wie viele aktive Wörter umfasst der Wortschatz eines durchschnittlichen Erwachsenen ungefähr?", a:16000, unit:"Wörter"},
-  {q:"Wie viele Sprachen werden weltweit ungefähr gesprochen?", a:7000, unit:"Sprachen"},
-  {q:"Wie hoch ist der höchste Wasserfall der Welt, der Angel Falls (in Metern)?", a:979, unit:"m"},
-  {q:"Wie viele Stunden dauert ein Tag auf dem Planeten Venus (in Erdstunden)?", a:5832, unit:"Std."},
-  {q:"Wie viele Kilometer legt das Space Shuttle in einer Erdumlaufbahn pro Stunde zurück (in km/h)?", a:28000, unit:"km/h"},
-  {q:"Wie viele olympische Sommerspiele haben bisher stattgefunden (Stand 2024)?", a:33, unit:"Spiele"},
-  {q:"Wie viele Einwohner hat die Vatikanstadt, der kleinste Staat der Welt, ungefähr?", a:800, unit:"Einwohner"},
-  {q:"Wie schnell kann ein Blitz theoretisch sein Ziel erreichen (in km/s)?", a:100000, unit:"km/s"},
-  {q:"Wie viele Kilogramm wiegt das Herz eines Blauwals ungefähr?", a:180, unit:"kg"},
-  {q:"Wie viele Kilometer misst die Küstenlinie Norwegens inklusive Fjorde ungefähr?", a:100000, unit:"km"},
-  {q:"Wie viele Bücher umfasst die Bibliothek des US-Kongresses ungefähr (in Millionen)?", a:170, unit:"Mio."},
-  {q:"Wie viele Golfbälle passen theoretisch in einen ausgewachsenen Blauwal (kuriose Schätzfrage, in Tausend)?", a:600, unit:"Tsd."},
+  {q:"Wie viele Treppenstufen hat der Eiffelturm?", a:1665, unit:"Stufen", ex:"Ganz oben auf der Aussichtsplattform sind es 1665 Stufen &mdash; wer schummeln will, nimmt einen der Aufzüge."},
+  {q:"Wie hoch ist der Mount Everest (in Metern)?", a:8849, unit:"m", ex:"Die offizielle Höhe wurde 2020 von China und Nepal gemeinsam auf 8849 m neu vermessen."},
+  {q:"Wie viele Knochen hat ein erwachsener Mensch?", a:206, unit:"Knochen", ex:"Babys kommen mit rund 300 Knochen zur Welt, viele wachsen im Laufe des Lebens zu den 206 der Erwachsenen zusammen."},
+  {q:"Wie lang ist die Chinesische Mauer (in km)?", a:21196, unit:"km", ex:"Eine Vermessung 2012 kam inklusive aller Nebenmauern und Abzweigungen auf 21.196 km Gesamtlänge."},
+  {q:"Wie lang ist der Nil, der längste Fluss der Welt (in km)?", a:6650, unit:"km", ex:"Der Nil fließt durch elf Länder und mündet nach 6650 km ins Mittelmeer."},
+  {q:"Wie viele Herzen hat ein Oktopus?", a:3, unit:"Herzen", ex:"Zwei Herzen pumpen Blut durch die Kiemen, eins durch den restlichen Körper &mdash; und ihr Blut ist blau."},
+  {q:"Wie schnell kann ein Gepard maximal laufen (in km/h)?", a:110, unit:"km/h", ex:"Auf kurzen Sprints erreicht der Gepard bis zu 110 km/h, kann das Tempo aber nur wenige Sekunden halten."},
+  {q:"Wie viele Länder sind aktuell Mitglied der Vereinten Nationen?", a:193, unit:"Länder", ex:"Zuletzt trat Südsudan 2011 als 193. Mitglied bei."},
+  {q:"Wie viele Zeitzonen hat Russland?", a:11, unit:"Zeitzonen", ex:"Von Kaliningrad bis Kamtschatka erstreckt sich Russland über 11 Zeitzonen."},
+  {q:"Wie hoch ist der Burj Khalifa in Dubai, das höchste Gebäude der Welt (in Metern)?", a:828, unit:"m", ex:"Mit 828 m Höhe und über 160 Stockwerken hält der Burj Khalifa den Rekord seit seiner Eröffnung 2010."},
+  {q:"In welchem Jahr wurde der Eiffelturm fertiggestellt?", a:1889, unit:"", ex:"Er wurde für die Weltausstellung 1889 gebaut und sollte ursprünglich nur 20 Jahre stehen bleiben."},
+  {q:"Wie groß ist Deutschland (in km²)?", a:357600, unit:"km²", ex:"Deutschland ist mit 357.600 km² etwas kleiner als Montana in den USA."},
+  {q:"Wie hoch ist die Zugspitze, Deutschlands höchster Berg (in Metern)?", a:2962, unit:"m", ex:"Die Zugspitze liegt genau auf der Grenze zwischen Deutschland und Österreich."},
+  {q:"Wie weit ist der Mond im Schnitt von der Erde entfernt (in km)?", a:384400, unit:"km", ex:"Die Entfernung schwankt, im Schnitt sind es 384.400 km &mdash; Licht braucht dafür gut 1,3 Sekunden."},
+  {q:"Wie viele Monde hat der Jupiter nach heutigem Kenntnisstand?", a:95, unit:"Monde", ex:"Die Zahl steigt regelmäßig, sobald neue kleine Monde entdeckt werden &mdash; aktuell sind es 95 bestätigte."},
+  {q:"Wie alt kann eine Galapagos-Riesenschildkröte maximal werden (in Jahren)?", a:150, unit:"Jahre", ex:"Die älteste bekannte Riesenschildkröte, Jonathan, ist über 190 Jahre alt &mdash; typischerweise werden es aber eher 150 Jahre."},
+  {q:"Wie viele Zähne hat ein erwachsener Mensch inklusive Weisheitszähnen?", a:32, unit:"Zähne", ex:"Ohne Weisheitszähne sind es 28 &mdash; die vier zusätzlichen kommen meist erst im späten Teenageralter."},
+  {q:"Wie viele Muskeln hat der Mensch ungefähr im Gesicht?", a:43, unit:"Muskeln", ex:"Für ein Lächeln braucht man nur wenige davon, fürs Stirnrunzeln deutlich mehr."},
+  {q:"Wie viele Liter Blut pumpt das menschliche Herz ungefähr pro Tag?", a:7500, unit:"Liter", ex:"Das Herz schlägt rund 100.000 Mal am Tag und bewegt dabei etwa 7500 Liter Blut."},
+  {q:"Wie viele Eier legt ein Huhn im Schnitt pro Jahr?", a:300, unit:"Eier", ex:"Moderne Legehennen-Rassen schaffen bis zu 300 Eier pro Jahr, also fast jeden Tag eins."},
+  {q:"Wie viele Kilometer Blutgefäße hat der menschliche Körper ungefähr?", a:100000, unit:"km", ex:"Aneinandergereiht würden die Blutgefäße eines Erwachsenen die Erde etwa 2,5 Mal umrunden."},
+  {q:"Wie viele Menschen leben ungefähr im Großraum Tokio (in Millionen)?", a:37, unit:"Mio.", ex:"Der Großraum Tokio ist die bevölkerungsreichste Metropolregion der Welt."},
+  {q:"Wie viele aktive Wörter umfasst der Wortschatz eines durchschnittlichen Erwachsenen ungefähr?", a:16000, unit:"Wörter", ex:"Der passive Wortschatz (Wörter, die man versteht, aber selten benutzt) ist oft deutlich größer."},
+  {q:"Wie viele Sprachen werden weltweit ungefähr gesprochen?", a:7000, unit:"Sprachen", ex:"Viele dieser rund 7000 Sprachen werden nur noch von einer Handvoll Menschen gesprochen und gelten als stark gefährdet."},
+  {q:"Wie hoch ist der höchste Wasserfall der Welt, der Angel Falls (in Metern)?", a:979, unit:"m", ex:"Der Angel Falls in Venezuela stürzt in freiem Fall fast einen Kilometer in die Tiefe."},
+  {q:"Wie viele Stunden dauert ein Tag auf dem Planeten Venus (in Erdstunden)?", a:5832, unit:"Std.", ex:"Ein Venustag dauert länger als ein Venusjahr (225 Erdtage) &mdash; der Planet dreht sich extrem langsam."},
+  {q:"Wie viele Kilometer legt das Space Shuttle in einer Erdumlaufbahn pro Stunde zurück (in km/h)?", a:28000, unit:"km/h", ex:"Bei dieser Geschwindigkeit umrundete das Space Shuttle die Erde einmal in rund 90 Minuten."},
+  {q:"Wie viele olympische Sommerspiele haben bisher stattgefunden (Stand 2024)?", a:33, unit:"Spiele", ex:"Die ersten modernen Olympischen Spiele fanden 1896 in Athen statt, seitdem fielen nur drei Ausgaben wegen Kriegen aus."},
+  {q:"Wie viele Einwohner hat die Vatikanstadt, der kleinste Staat der Welt, ungefähr?", a:800, unit:"Einwohner", ex:"Die Vatikanstadt ist mit nur 0,49 km² auch flächenmäßig der kleinste Staat der Welt."},
+  {q:"Wie schnell kann ein Blitz theoretisch sein Ziel erreichen (in km/s)?", a:100000, unit:"km/s", ex:"Der Blitzkanal selbst breitet sich mit rund einem Drittel der Lichtgeschwindigkeit aus."},
+  {q:"Wie viele Kilogramm wiegt das Herz eines Blauwals ungefähr?", a:180, unit:"kg", ex:"Allein die Aorta eines Blauwal-Herzens ist groß genug, dass ein Mensch hindurchkriechen könnte."},
+  {q:"Wie viele Kilometer misst die Küstenlinie Norwegens inklusive Fjorde ungefähr?", a:100000, unit:"km", ex:"Mit allen Fjorden und Inseln mitgerechnet reicht Norwegens Küste mehr als zweieinhalb Mal um die Erde."},
+  {q:"Wie viele Bücher umfasst die Bibliothek des US-Kongresses ungefähr (in Millionen)?", a:170, unit:"Mio.", ex:"Die Library of Congress ist die größte Bibliothek der Welt, gemessen an der Zahl der Medien."},
+  {q:"Wie viele Golfbälle passen theoretisch in einen ausgewachsenen Blauwal (kuriose Schätzfrage, in Tausend)?", a:600, unit:"Tsd.", ex:"Grobe Schätzung auf Basis des Körpervolumens eines Blauwals &mdash; eine eher unernste, aber beliebte Trivia-Frage."},
 ];
 
 function shuffle(arr){
@@ -320,7 +336,7 @@ function persistHostRecovery(){
   if(!game.isHost || !game.code) return;
   try{
     sessionStorage.setItem('np_host_' + game.code, JSON.stringify({
-      localRounds: game.localRounds, groupsFull: game.groupsFull,
+      localRounds: game.localRounds, groupsFull: game.groupsFull, roundTimings: game.roundTimings,
     }));
   }catch(e){}
 }
@@ -368,7 +384,7 @@ async function resumeRoom(code, isHost, name){
   game.code = code; game.isHost = isHost; game.myName = name;
   if(isHost){
     const rec = loadHostRecovery(code);
-    if(rec){ game.localRounds = rec.localRounds; game.groupsFull = rec.groupsFull; }
+    if(rec){ game.localRounds = rec.localRounds; game.groupsFull = rec.groupsFull; game.roundTimings = rec.roundTimings; }
   }
   attachRoomListeners();
   ui.view = 'game';
@@ -502,22 +518,36 @@ function maybeAttachHostAggregation(){
 
 async function tryCloseBluffPhase(bluffSnap){
   if(!game.room || game.room.phase !== 'bluff') return;
+
+  const submittedUids = bluffSnap.docs.map(d => d.id).sort();
+  const prevSubmitted = ((game.room.bluffProgress && game.room.bluffProgress.submittedUids) || []).slice().sort();
+  if(JSON.stringify(submittedUids) !== JSON.stringify(prevSubmitted)){
+    setDoc(doc(db, 'rooms', game.code), { bluffProgress: { submittedUids } }, { merge: true }).catch(()=>{});
+  }
+
   if(bluffSnap.size < game.players.length) return;
   if(bluffSnap.size === 0) return;
 
   const roundIndex = game.room.roundIndex;
   const answer = game.localRounds[roundIndex].a;
+  const roundStartMs = (game.room.roundStartedAt && typeof game.room.roundStartedAt.toMillis === 'function') ? game.room.roundStartedAt.toMillis() : null;
+  const timings = [];
   const byValue = new Map();
   bluffSnap.forEach(d => {
-    const v = d.data().value;
+    const data = d.data();
+    const v = data.value;
     if(!byValue.has(v)) byValue.set(v, { value: v, authorUids: [] });
     byValue.get(v).authorUids.push(d.id);
+    if(roundStartMs != null && data.submittedAt && typeof data.submittedAt.toMillis === 'function'){
+      timings.push({ uid: d.id, ms: Math.max(0, data.submittedAt.toMillis() - roundStartMs) });
+    }
   });
   if(!byValue.has(answer)) byValue.set(answer, { value: answer, authorUids: [] });
   const groupsFull = shuffle(Array.from(byValue.values())).map((g,i) => ({
     ...g, id: String.fromCharCode(65+i), isTruth: g.value === answer,
   }));
   game.groupsFull = groupsFull;
+  game.roundTimings = timings;
   persistHostRecovery();
 
   const batch = writeBatch(db);
@@ -539,6 +569,13 @@ async function tryCloseVotePhase(voteSnap){
   if(!game.room || game.room.phase !== 'vote') return;
   const eligible = game.room.eligibleVoterUids || [];
   if(eligible.length === 0) return;
+
+  const submittedUids = voteSnap.docs.map(d => d.id).sort();
+  const prevSubmitted = ((game.room.voteProgress && game.room.voteProgress.submittedUids) || []).slice().sort();
+  if(JSON.stringify(submittedUids) !== JSON.stringify(prevSubmitted)){
+    setDoc(doc(db, 'rooms', game.code), { voteProgress: { submittedUids } }, { merge: true }).catch(()=>{});
+  }
+
   if(voteSnap.size < eligible.length) return;
 
   const groupsFull = game.groupsFull;
@@ -552,6 +589,7 @@ async function tryCloseVotePhase(voteSnap){
   for(const g of groupsFull){
     const voters = Object.entries(voteMap).filter(([,gid]) => gid === g.id).map(([u]) => u);
     g.voteCount = voters.length;
+    g.voterUids = voters;
     if(g.isTruth){
       voters.forEach(u => { deltas[u] = (deltas[u]||0) + 2; });
       g.authorUids.forEach(u => { deltas[u] = (deltas[u]||0) + 2; });
@@ -559,6 +597,13 @@ async function tryCloseVotePhase(voteSnap){
       g.authorUids.forEach(u => { deltas[u] = (deltas[u]||0) + voters.length; });
     }
   }
+
+  const nameOf = (u) => (game.players.find(p => p.id === u) || {}).name;
+
+  const timings = (game.roundTimings || [])
+    .map(t => ({ uid: t.uid, name: nameOf(t.uid), ms: t.ms }))
+    .filter(t => t.name)
+    .sort((a,b) => a.ms - b.ms);
 
   const batch = writeBatch(db);
   for(const p of game.players){
@@ -569,11 +614,14 @@ async function tryCloseVotePhase(voteSnap){
     phase: 'reveal',
     reveal: {
       answer: game.localRounds[game.room.roundIndex].a,
+      explanation: game.localRounds[game.room.roundIndex].ex || '',
       groups: groupsFull.map(g => ({
         id: g.id, value: g.value, isTruth: g.isTruth, voteCount: g.voteCount || 0,
-        authorNames: g.authorUids.map(u => (game.players.find(p => p.id === u) || {}).name).filter(Boolean),
+        authorNames: g.authorUids.map(nameOf).filter(Boolean),
+        voterNames: (g.voterUids || []).map(nameOf).filter(Boolean),
       })),
       deltas,
+      timings,
     },
   }, { merge: true });
   await batch.commit();
@@ -586,6 +634,7 @@ async function startGame(){
   const q = game.localRounds[0];
   await setDoc(doc(db, 'rooms', game.code), {
     phase: 'bluff', roundIndex: 0, question: { text: q.q, unit: q.unit }, groups: null, reveal: null, eligibleVoterUids: null,
+    roundStartedAt: serverTimestamp(), bluffProgress: null, voteProgress: null,
   }, { merge: true });
 }
 
@@ -625,6 +674,7 @@ async function nextRound(){
     const q = game.localRounds[nextIndex];
     await setDoc(doc(db, 'rooms', game.code), {
       phase: 'bluff', roundIndex: nextIndex, question: { text: q.q, unit: q.unit }, groups: null, reveal: null, eligibleVoterUids: null,
+      roundStartedAt: serverTimestamp(), bluffProgress: null, voteProgress: null,
     }, { merge: true });
   }
 }
@@ -641,7 +691,10 @@ function topBar(){
   return `
     <div class="top-bar">
       <span class="tag">${game.code ? ('Raum ' + game.code) : ''}</span>
-      <button class="link-btn" onclick="window.__np.leaveGame()">Spiel verlassen</button>
+      <span>
+        <button class="link-btn" onclick="location.reload()" title="Hängt's? Neu laden.">&#8635; Neu laden</button>
+        <button class="link-btn" onclick="window.__np.leaveGame()">Spiel verlassen</button>
+      </span>
     </div>
   `;
 }
@@ -735,8 +788,24 @@ function renderLobby(){
   `;
 }
 
+function renderPresenceList(playerIds, submittedUids){
+  const submitted = new Set(submittedUids || []);
+  return `
+    <div class="presence-list">
+      ${playerIds.map(id => {
+        const p = game.players.find(pl => pl.id === id);
+        if(!p) return '';
+        const done = submitted.has(id);
+        return `<span class="presence-chip ${done?'done':''}"><span class="dot"></span>${escapeHtml(p.name)}${done?'':' &hellip;'}</span>`;
+      }).join('')}
+    </div>
+  `;
+}
+
 function renderBluff(){
   const q = game.room.question;
+  const submittedUids = (game.room.bluffProgress && game.room.bluffProgress.submittedUids) || [];
+  const allIds = game.players.map(p => p.id);
   if(game.hasSubmittedBluff){
     return `
       ${topBar()}
@@ -746,6 +815,7 @@ function renderBluff(){
         <p class="wait-title">Bluff abgeschickt!</p>
         <p class="wait-hint">Warte, bis alle anderen auch ihre Schätzung eingetippt haben.</p>
       </div>
+      ${renderPresenceList(allIds, submittedUids)}
     `;
   }
   return `
@@ -770,6 +840,8 @@ function renderVote(){
   const eligible = (game.room.eligibleVoterUids || []).includes(uid);
 
   if(!eligible || game.hasSubmittedVote){
+    const voteSubmittedUids = (game.room.voteProgress && game.room.voteProgress.submittedUids) || [];
+    const eligibleIds = game.room.eligibleVoterUids || [];
     return `
       ${topBar()}
       <p class="progress">Frage <span class="fill">${game.room.roundIndex+1}</span> von ${game.room.totalRounds}</p>
@@ -778,6 +850,7 @@ function renderVote(){
         <p class="wait-title">${eligible ? 'Stimme abgegeben!' : 'Alle Antworten waren identisch mit deiner'}</p>
         <p class="wait-hint">Warte, bis alle anderen abgestimmt haben.</p>
       </div>
+      ${renderPresenceList(eligibleIds, voteSubmittedUids)}
     `;
   }
 
@@ -819,6 +892,7 @@ function renderReveal(){
     <div class="q-box">
       <p class="q-eyebrow">Richtige Antwort</p>
       <p class="q-text">${fmt(rv.answer)}${q.unit?(' '+escapeHtml(q.unit)):''}</p>
+      ${rv.explanation ? `<p class="q-explain">${escapeHtml(rv.explanation)}</p>` : ''}
     </div>
     ${sortedGroups.map(g => `
       <div class="rv-item ${g.isTruth?'truth':''}">
@@ -829,10 +903,32 @@ function renderReveal(){
         </div>
         <p class="rv-meta">
           ${g.authorNames.length ? `<b>${g.authorNames.map(escapeHtml).join(', ')}</b> ${g.authorNames.length===1?'hat':'haben'} das${g.isTruth?' exakt getroffen':' geschätzt'}. ` : (g.isTruth?'Von niemandem geraten. ':'')}
-          ${g.voteCount>0 ? `${g.voteCount} ${g.voteCount===1?'Stimme':'Stimmen'} erhalten.` : 'Keine Stimmen.'}
+          ${g.voteCount>0
+            ? (g.isTruth
+                ? `${g.voteCount} ${g.voteCount===1?'Person hat':'Personen haben'} das erkannt: <b>${g.voterNames.map(escapeHtml).join(', ')}</b>.`
+                : `Reingefallen sind ${g.voteCount} ${g.voteCount===1?'Person':'Personen'}: <b>${g.voterNames.map(escapeHtml).join(', ')}</b>.`)
+            : 'Keine Stimmen.'}
         </p>
       </div>
     `).join('')}
+
+    ${rv.timings && rv.timings.length > 1 ? `
+      <h2 style="font-family:var(--font-sans);font-size:16px;margin:20px 0 8px">Tempo-Check</h2>
+      <div class="tempo-list">
+        ${rv.timings.map((t,i) => {
+          const isFastest = i === 0;
+          const isSlowest = i === rv.timings.length - 1;
+          const emoji = isSlowest ? '🦥' : (isFastest ? '⚡' : '');
+          return `
+            <div class="tempo-row">
+              <span class="badge-emoji">${emoji}</span>
+              <span class="nm">${escapeHtml(t.name)}${isSlowest?' <span style="font-weight:400;color:var(--stone)">&mdash; Faultier der Runde</span>':''}</span>
+              <span class="secs">${(t.ms/1000).toFixed(1)}s</span>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    ` : ''}
 
     <h2 style="font-family:var(--font-sans);font-size:16px;margin:20px 0 8px">Punktestand</h2>
     <div class="score-list">
