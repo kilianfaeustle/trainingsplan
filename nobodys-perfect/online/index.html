@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Nobody's Perfect Online · Kilian Fäustle</title>
+<meta name="description" content="Das Bluff-Quiz für die ganze Gruppe &mdash; jede:r auf dem eigenen Handy, ein Raum-Code verbindet euch.">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Roboto+Flex:opsz,wght@8..144,300..900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --font-serif:'Instrument Serif',Georgia,serif;
+  --font-sans:'Roboto Flex',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --sage-50:#ebf3ef;--sage-100:#cfe3d8;--sage-500:#1a9b82;--sage-600:#14816c;--sage-700:#106554;
+  --blue-50:#ebf3f9;--blue-100:#d1e3f0;--blue-500:#408fbc;--blue-700:#275f80;
+  --coral-50:#fdece5;--coral-100:#fad4c4;--coral-500:#ec7a5b;--coral-600:#d9603f;--coral-700:#b34c30;
+  --cream:#f9f6f4;--snow:#fdfbf8;--paper:#f4f0eb;
+  --sand:#d9d3c9;--stone:#6b655d;--stone-light:#a8a29a;--graphite:#4a453f;--ink:#1a1918;
+  --border:#e4ddd2;--border-subtle:#efeae2;
+  --radius-sm:10px;--radius-md:16px;--radius-lg:24px;--radius-pill:999px;
+  --shadow-sm:0 2px 6px rgba(30,20,10,.06),0 1px 2px rgba(30,20,10,.04);
+  --shadow-md:0 6px 16px rgba(30,20,10,.08),0 2px 4px rgba(30,20,10,.04);
+  --ease-out:cubic-bezier(.22,1,.36,1);--dur:220ms;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--cream);color:var(--ink);
+  font-family:var(--font-sans);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  min-height:100vh;
+}
+.wrap{max-width:560px;margin:0 auto;padding:0 20px 48px}
+button{font-family:inherit}
+header.site{padding:20px 0 4px}
+.brand{display:flex;align-items:center;gap:10px}
+.wordmark{font-family:var(--font-serif);font-style:italic;font-size:20px;color:var(--ink);text-decoration:none}
+.tag{font-size:12px;color:var(--stone);font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+
+h1{
+  font-family:var(--font-serif);font-weight:400;font-size:clamp(36px,11vw,52px);
+  line-height:1.04;letter-spacing:-.02em;margin:14px 0 10px;
+}
+h1 em{font-style:italic;color:var(--coral-500)}
+.lede{font-size:16.5px;line-height:1.6;color:var(--graphite);margin:0 0 22px;max-width:48ch}
+
+.card{
+  background:var(--snow);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:22px;box-shadow:var(--shadow-sm);margin:0 0 16px;
+}
+.card h2{font-family:var(--font-sans);font-weight:700;font-size:18px;margin:0 0 10px}
+.card p{margin:0 0 10px;color:var(--graphite);font-size:15px;line-height:1.6}
+.card p:last-child{margin-bottom:0}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  background:var(--sage-600);color:#fff;border:none;cursor:pointer;
+  font-family:var(--font-sans);font-weight:700;font-size:17px;
+  border-radius:var(--radius-pill);padding:16px 22px;box-shadow:var(--shadow-md);
+  transition:background var(--dur) var(--ease-out),transform var(--dur) var(--ease-out),opacity var(--dur);
+  -webkit-tap-highlight-color:transparent;
+}
+.btn:active{transform:scale(.98)}
+.btn:hover{background:var(--sage-700)}
+.btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+.btn.coral{background:var(--coral-500)}
+.btn.coral:hover{background:var(--coral-600)}
+.btn.ghost{
+  background:transparent;color:var(--stone);box-shadow:none;border:1.5px solid var(--border);
+  font-weight:600;font-size:15px;padding:12px 20px;
+}
+.btn.ghost:hover{color:var(--graphite);border-color:var(--sand)}
+.btn.small{width:auto;padding:10px 18px;font-size:14.5px;box-shadow:none}
+
+.row{display:flex;gap:10px;align-items:center}
+.tabs{display:flex;gap:8px;margin:0 0 16px;background:var(--paper);border-radius:var(--radius-pill);padding:4px}
+.tab{
+  flex:1;text-align:center;border:none;background:none;cursor:pointer;font-weight:700;font-size:14.5px;
+  color:var(--stone);padding:10px 14px;border-radius:var(--radius-pill);transition:background var(--dur),color var(--dur);
+}
+.tab.active{background:var(--snow);color:var(--ink);box-shadow:var(--shadow-sm)}
+
+input[type=text],input[type=number]{
+  width:100%;font-family:var(--font-sans);font-size:17px;font-weight:500;color:var(--ink);
+  background:var(--paper);border:1.5px solid var(--sand);border-radius:14px;
+  padding:14px 16px;transition:border-color var(--dur) var(--ease-out);
+}
+input[type=text]:focus,input[type=number]:focus{outline:none;border-color:var(--sage-500);background:var(--snow)}
+input[type=number]{font-variant-numeric:tabular-nums}
+input.code-input{text-transform:uppercase;letter-spacing:.15em;font-weight:700;text-align:center;font-size:22px}
+select{
+  font-family:var(--font-sans);font-size:15.5px;font-weight:600;color:var(--ink);
+  background:var(--paper);border:1.5px solid var(--sand);border-radius:12px;padding:10px 14px;
+}
+label.field{display:block;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--stone);margin:0 0 8px}
+
+.eyebrow{
+  font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--stone);margin:0 0 10px;
+}
+
+.player-list{display:flex;flex-direction:column;gap:8px;margin:14px 0 0}
+.player-chip{
+  display:flex;align-items:center;gap:10px;background:var(--paper);
+  border:1px solid var(--border);border-radius:var(--radius-md);padding:11px 14px;
+}
+.player-chip .num{
+  flex:none;width:26px;height:26px;border-radius:50%;background:var(--sage-500);color:#fff;
+  display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;
+}
+.player-chip .nm{flex:1;font-weight:600;font-size:15.5px}
+.player-chip .host-badge{font-size:11px;font-weight:700;color:var(--coral-600);letter-spacing:.04em;text-transform:uppercase}
+
+.progress{font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--stone);margin:0 0 10px}
+.progress .fill{color:var(--sage-600)}
+
+.room-code-box{
+  text-align:center;background:var(--sage-50);border:1.5px dashed var(--sage-500);border-radius:var(--radius-lg);
+  padding:22px 18px;margin:0 0 18px;
+}
+.room-code-box .lbl{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--sage-700);margin:0 0 8px}
+.room-code-box .code{font-family:var(--font-serif);font-size:44px;letter-spacing:.06em;color:var(--ink);margin:0}
+
+.wait-screen{text-align:center;padding:40px 0}
+.wait-icon{font-size:52px;margin:0 0 14px;line-height:1;animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.wait-title{font-family:var(--font-serif);font-style:italic;font-size:28px;color:var(--ink);margin:0 0 8px}
+.wait-hint{font-size:15px;color:var(--graphite);max-width:38ch;margin:0 auto}
+
+.q-box{
+  background:var(--sage-50);border:1px solid var(--sage-100);border-radius:var(--radius-lg);
+  padding:20px 22px;margin:0 0 18px;
+}
+.q-box .q-eyebrow{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--sage-700);margin:0 0 8px}
+.q-box .q-text{font-size:19px;font-weight:600;line-height:1.4;color:var(--ink);margin:0}
+.unit-suffix{font-size:14px;color:var(--stone);margin:8px 2px 0}
+
+.opt-list{display:flex;flex-direction:column;gap:10px;margin:16px 0 20px}
+.opt{
+  display:flex;align-items:center;gap:12px;text-align:left;width:100%;
+  background:var(--snow);border:1.5px solid var(--border);border-radius:var(--radius-md);
+  padding:14px 16px;cursor:pointer;font-family:inherit;
+  transition:border-color var(--dur),background var(--dur);
+  -webkit-tap-highlight-color:transparent;
+}
+.opt .letter{
+  flex:none;width:32px;height:32px;border-radius:50%;background:var(--paper);color:var(--graphite);
+  display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;
+}
+.opt .val{font-size:17px;font-weight:700;color:var(--ink)}
+.opt.selected{border-color:var(--coral-500);background:var(--coral-50)}
+.opt.selected .letter{background:var(--coral-500);color:#fff}
+.opt.disabled{opacity:.45;cursor:not-allowed}
+.opt .own-note{font-size:12.5px;color:var(--stone);margin-left:auto;font-weight:600}
+
+.rv-item{
+  background:var(--snow);border:1.5px solid var(--border);border-radius:var(--radius-md);
+  padding:14px 16px;margin:0 0 10px;
+}
+.rv-item.truth{border-color:var(--sage-500);background:var(--sage-50)}
+.rv-top{display:flex;align-items:center;gap:10px;margin:0 0 4px}
+.rv-top .letter{
+  flex:none;width:28px;height:28px;border-radius:50%;background:var(--paper);color:var(--graphite);
+  display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;
+}
+.rv-item.truth .rv-top .letter{background:var(--sage-500);color:#fff}
+.rv-top .val{font-size:16.5px;font-weight:700}
+.rv-top .badge{
+  margin-left:auto;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  background:var(--sage-500);color:#fff;border-radius:var(--radius-pill);padding:3px 10px;
+}
+.rv-meta{font-size:13.5px;color:var(--stone);padding-left:38px}
+.rv-meta b{color:var(--graphite)}
+
+.score-list{display:flex;flex-direction:column;gap:8px;margin:14px 0 0}
+.score-row{
+  display:flex;align-items:center;gap:12px;background:var(--paper);
+  border-radius:var(--radius-md);padding:12px 15px;
+}
+.score-row .rank{flex:none;width:24px;text-align:center;font-weight:700;color:var(--stone);font-size:14px}
+.score-row .nm{flex:1;font-weight:600;font-size:15.5px}
+.score-row .pts{font-weight:700;font-size:17px;color:var(--sage-700);font-variant-numeric:tabular-nums}
+.score-row .delta{font-size:13px;font-weight:700;color:var(--coral-600);margin-left:6px}
+.score-row.first{background:linear-gradient(90deg,var(--sage-50),var(--paper));border:1px solid var(--sage-100)}
+
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin:0 0 6px}
+.link-btn{background:none;border:none;color:var(--stone-light);font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:2px;padding:6px}
+.link-btn:hover{color:var(--stone)}
+
+.rules-toggle{background:none;border:none;color:var(--sage-700);font-weight:600;font-size:14.5px;cursor:pointer;padding:2px 0;text-decoration:underline;text-underline-offset:3px}
+.rules-body{margin-top:10px}
+.rules-body ol{margin:0;padding-left:20px;color:var(--graphite);font-size:14.5px;line-height:1.7}
+
+.error-box{background:var(--coral-50);border:1px solid var(--coral-100);color:var(--coral-700);border-radius:var(--radius-md);padding:12px 16px;font-size:14.5px;margin:0 0 14px}
+
+footer.site{margin:36px 0 0;padding:20px 0 10px;border-top:1px solid var(--border);font-size:13.5px;color:var(--stone)}
+.center{text-align:center}
+.emoji-big{font-size:44px;line-height:1;margin:0 0 6px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="site"><div class="brand">
+    <span class="wordmark">Kilian Fäustle</span>
+    <span class="tag" id="top-tag"></span>
+  </div></header>
+
+  <main id="app">
+    <div class="center" style="padding:60px 0"><p style="color:var(--stone)">Lädt…</p></div>
+  </main>
+
+  <footer class="site">
+    <span class="wordmark">Kilian Fäustle</span><br>
+    kilianf.de
+  </footer>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import {
+  getFirestore, doc, setDoc, getDoc, getDocs, collection, onSnapshot,
+  serverTimestamp, writeBatch, increment, query, orderBy, runTransaction,
+} from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyADW3a_-bF3hSGUDUtcmGcnESc2vjAYcV4",
+  authDomain: "nobodys-perfect-57993.firebaseapp.com",
+  projectId: "nobodys-perfect-57993",
+  storageBucket: "nobodys-perfect-57993.firebasestorage.app",
+  messagingSenderId: "853657949536",
+  appId: "1:853657949536:web:2cd1649f930734c282ba05",
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const auth = getAuth(fbApp);
+const db = getFirestore(fbApp);
+
+const $ = id => document.getElementById(id);
+const appEl = $('app');
+
+const QUESTIONS = [
+  {q:"Wie viele Treppenstufen hat der Eiffelturm?", a:1665, unit:"Stufen"},
+  {q:"Wie hoch ist der Mount Everest (in Metern)?", a:8849, unit:"m"},
+  {q:"Wie viele Knochen hat ein erwachsener Mensch?", a:206, unit:"Knochen"},
+  {q:"Wie lang ist die Chinesische Mauer (in km)?", a:21196, unit:"km"},
+  {q:"Wie lang ist der Nil, der längste Fluss der Welt (in km)?", a:6650, unit:"km"},
+  {q:"Wie viele Herzen hat ein Oktopus?", a:3, unit:"Herzen"},
+  {q:"Wie schnell kann ein Gepard maximal laufen (in km/h)?", a:110, unit:"km/h"},
+  {q:"Wie viele Länder sind aktuell Mitglied der Vereinten Nationen?", a:193, unit:"Länder"},
+  {q:"Wie viele Zeitzonen hat Russland?", a:11, unit:"Zeitzonen"},
+  {q:"Wie hoch ist der Burj Khalifa in Dubai, das höchste Gebäude der Welt (in Metern)?", a:828, unit:"m"},
+  {q:"In welchem Jahr wurde der Eiffelturm fertiggestellt?", a:1889, unit:""},
+  {q:"Wie groß ist Deutschland (in km²)?", a:357600, unit:"km²"},
+  {q:"Wie hoch ist die Zugspitze, Deutschlands höchster Berg (in Metern)?", a:2962, unit:"m"},
+  {q:"Wie weit ist der Mond im Schnitt von der Erde entfernt (in km)?", a:384400, unit:"km"},
+  {q:"Wie viele Monde hat der Jupiter nach heutigem Kenntnisstand?", a:95, unit:"Monde"},
+  {q:"Wie alt kann eine Galapagos-Riesenschildkröte maximal werden (in Jahren)?", a:150, unit:"Jahre"},
+  {q:"Wie viele Zähne hat ein erwachsener Mensch inklusive Weisheitszähnen?", a:32, unit:"Zähne"},
+  {q:"Wie viele Muskeln hat der Mensch ungefähr im Gesicht?", a:43, unit:"Muskeln"},
+  {q:"Wie viele Liter Blut pumpt das menschliche Herz ungefähr pro Tag?", a:7500, unit:"Liter"},
+  {q:"Wie viele Eier legt ein Huhn im Schnitt pro Jahr?", a:300, unit:"Eier"},
+  {q:"Wie viele Kilometer Blutgefäße hat der menschliche Körper ungefähr?", a:100000, unit:"km"},
+  {q:"Wie viele Menschen leben ungefähr im Großraum Tokio (in Millionen)?", a:37, unit:"Mio."},
+  {q:"Wie viele aktive Wörter umfasst der Wortschatz eines durchschnittlichen Erwachsenen ungefähr?", a:16000, unit:"Wörter"},
+  {q:"Wie viele Sprachen werden weltweit ungefähr gesprochen?", a:7000, unit:"Sprachen"},
+  {q:"Wie hoch ist der höchste Wasserfall der Welt, der Angel Falls (in Metern)?", a:979, unit:"m"},
+  {q:"Wie viele Stunden dauert ein Tag auf dem Planeten Venus (in Erdstunden)?", a:5832, unit:"Std."},
+  {q:"Wie viele Kilometer legt das Space Shuttle in einer Erdumlaufbahn pro Stunde zurück (in km/h)?", a:28000, unit:"km/h"},
+  {q:"Wie viele olympische Sommerspiele haben bisher stattgefunden (Stand 2024)?", a:33, unit:"Spiele"},
+  {q:"Wie viele Einwohner hat die Vatikanstadt, der kleinste Staat der Welt, ungefähr?", a:800, unit:"Einwohner"},
+  {q:"Wie schnell kann ein Blitz theoretisch sein Ziel erreichen (in km/s)?", a:100000, unit:"km/s"},
+  {q:"Wie viele Kilogramm wiegt das Herz eines Blauwals ungefähr?", a:180, unit:"kg"},
+  {q:"Wie viele Kilometer misst die Küstenlinie Norwegens inklusive Fjorde ungefähr?", a:100000, unit:"km"},
+  {q:"Wie viele Bücher umfasst die Bibliothek des US-Kongresses ungefähr (in Millionen)?", a:170, unit:"Mio."},
+  {q:"Wie viele Golfbälle passen theoretisch in einen ausgewachsenen Blauwal (kuriose Schätzfrage, in Tausend)?", a:600, unit:"Tsd."},
+];
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+function fmt(n){ return Number(n).toLocaleString('de-DE'); }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no O/0, I/1
+function genCode(){ let s=''; for(let i=0;i<5;i++) s+=CODE_ALPHABET[Math.floor(Math.random()*CODE_ALPHABET.length)]; return s; }
+
+// ---------------- App state ----------------
+let uid = null;
+let unsubRoom = null, unsubPlayers = null, unsubOwnPlayer = null, unsubHostBluffs = null, unsubHostVotes = null;
+
+let ui = {
+  view: 'loading', // loading | landing | game
+  joinError: '',
+  rulesOpen: false,
+  createName: '',
+  joinName: '',
+  joinCode: (new URLSearchParams(location.search).get('code') || '').toUpperCase(),
+  tab: 'create',
+};
+
+let game = {
+  code: null,
+  isHost: false,
+  room: null,        // live room doc
+  players: [],        // live players array (sorted by joinedAt)
+  ownPlayer: null,     // live own player doc (has ownGroupIds)
+  myName: '',
+  localRounds: null,   // host only: full question+answer list, kept out of Firestore
+  groupsFull: null,    // host only: current round groups incl. authorUids
+  hasSubmittedBluff: false,
+  hasSubmittedVote: false,
+  selectedGroupId: null,
+  bluffInputVal: '',
+};
+
+function persistHostRecovery(){
+  if(!game.isHost || !game.code) return;
+  try{
+    sessionStorage.setItem('np_host_' + game.code, JSON.stringify({
+      localRounds: game.localRounds, groupsFull: game.groupsFull,
+    }));
+  }catch(e){}
+}
+function loadHostRecovery(code){
+  try{
+    const raw = sessionStorage.getItem('np_host_' + code);
+    if(!raw) return null;
+    return JSON.parse(raw);
+  }catch(e){ return null; }
+}
+function persistSession(){
+  try{
+    sessionStorage.setItem('np_session', JSON.stringify({ code: game.code, isHost: game.isHost, name: game.myName }));
+  }catch(e){}
+}
+function loadSession(){
+  try{
+    const raw = sessionStorage.getItem('np_session');
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+function clearSession(){
+  try{ sessionStorage.removeItem('np_session'); }catch(e){}
+}
+
+// ---------------- Firebase auth bootstrap ----------------
+onAuthStateChanged(auth, async (user) => {
+  if(!user){
+    try{ await signInAnonymously(auth); }catch(e){ console.error(e); }
+    return;
+  }
+  uid = user.uid;
+  const saved = loadSession();
+  if(saved && saved.code){
+    await resumeRoom(saved.code, saved.isHost, saved.name);
+  } else {
+    ui.view = 'landing';
+    render();
+  }
+});
+
+async function resumeRoom(code, isHost, name){
+  const roomSnap = await getDoc(doc(db, 'rooms', code));
+  if(!roomSnap.exists()){ clearSession(); ui.view='landing'; render(); return; }
+  game.code = code; game.isHost = isHost; game.myName = name;
+  if(isHost){
+    const rec = loadHostRecovery(code);
+    if(rec){ game.localRounds = rec.localRounds; game.groupsFull = rec.groupsFull; }
+  }
+  attachRoomListeners();
+  ui.view = 'game';
+  render();
+}
+
+// ---------------- Actions: create / join ----------------
+async function createRoom(){
+  const name = ($('create-name').value || '').trim();
+  if(!name) return;
+  const count = $('rounds-select').value === 'all' ? QUESTIONS.length : Math.min(parseInt($('rounds-select').value,10), QUESTIONS.length);
+  const localRounds = shuffle(QUESTIONS).slice(0, count);
+
+  let code = null;
+  for(let attempt=0; attempt<8; attempt++){
+    const candidate = genCode();
+    const ref = doc(db, 'rooms', candidate);
+    try{
+      await runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+        if(snap.exists()) throw new Error('exists');
+        tx.set(ref, {
+          hostUid: uid, phase: 'lobby', roundIndex: 0, totalRounds: count,
+          question: null, groups: null, reveal: null, eligibleVoterUids: null,
+          createdAt: serverTimestamp(),
+        });
+      });
+      code = candidate;
+      break;
+    }catch(e){ /* collision, retry */ }
+  }
+  if(!code){ ui.joinError = 'Konnte keinen freien Raum-Code finden, versuch es nochmal.'; render(); return; }
+
+  await setDoc(doc(db, 'rooms', code, 'players', uid), { name, score:0, joinedAt: serverTimestamp() });
+
+  game.code = code; game.isHost = true; game.myName = name; game.localRounds = localRounds; game.groupsFull = null;
+  persistHostRecovery(); persistSession();
+  attachRoomListeners();
+  ui.view = 'game';
+  render();
+}
+
+async function joinRoom(){
+  const name = ($('join-name').value || '').trim();
+  const code = ($('join-code').value || '').trim().toUpperCase();
+  if(!name || !code) return;
+  ui.joinError = '';
+  const ref = doc(db, 'rooms', code);
+  const snap = await getDoc(ref);
+  if(!snap.exists()){ ui.joinError = 'Raum nicht gefunden. Code richtig eingetippt?'; render(); return; }
+  if(snap.data().phase !== 'lobby'){ ui.joinError = 'Dieses Spiel läuft schon. Frag nach einem neuen Code.'; render(); return; }
+
+  await setDoc(doc(db, 'rooms', code, 'players', uid), { name, score:0, joinedAt: serverTimestamp() });
+
+  game.code = code; game.isHost = false; game.myName = name;
+  persistSession();
+  attachRoomListeners();
+  ui.view = 'game';
+  render();
+}
+
+function leaveGame(){
+  if(!confirm('Spiel wirklich verlassen?')) return;
+  detachRoomListeners();
+  clearSession();
+  game = { code:null, isHost:false, room:null, players:[], ownPlayer:null, myName:'', localRounds:null, groupsFull:null, hasSubmittedBluff:false, hasSubmittedVote:false, selectedGroupId:null, bluffInputVal:'' };
+  ui.view = 'landing';
+  render();
+}
+
+// ---------------- Firestore listeners ----------------
+function detachRoomListeners(){
+  if(unsubRoom) unsubRoom();
+  if(unsubPlayers) unsubPlayers();
+  if(unsubOwnPlayer) unsubOwnPlayer();
+  if(unsubHostBluffs) unsubHostBluffs();
+  if(unsubHostVotes) unsubHostVotes();
+  unsubRoom = unsubPlayers = unsubOwnPlayer = unsubHostBluffs = unsubHostVotes = null;
+  hostAggState = { key: null };
+}
+
+function attachRoomListeners(){
+  detachRoomListeners();
+  const code = game.code;
+
+  unsubRoom = onSnapshot(doc(db, 'rooms', code), (snap) => {
+    if(!snap.exists()){ return; }
+    const prevPhase = game.room ? game.room.phase : null;
+    const prevRound = game.room ? game.room.roundIndex : null;
+    game.room = snap.data();
+    if(game.room.phase !== prevPhase || game.room.roundIndex !== prevRound){
+      game.hasSubmittedBluff = false;
+      game.hasSubmittedVote = false;
+      game.selectedGroupId = null;
+      game.bluffInputVal = '';
+    }
+    if(game.isHost) maybeAttachHostAggregation();
+    render();
+  });
+
+  unsubPlayers = onSnapshot(query(collection(db, 'rooms', code, 'players'), orderBy('joinedAt','asc')), (snap) => {
+    game.players = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    render();
+  });
+
+  unsubOwnPlayer = onSnapshot(doc(db, 'rooms', code, 'players', uid), (snap) => {
+    game.ownPlayer = snap.exists() ? snap.data() : null;
+    render();
+  });
+}
+
+let hostAggState = { round: null, phase: null };
+function maybeAttachHostAggregation(){
+  if(!game.room) return;
+  const key = game.room.roundIndex + ':' + game.room.phase;
+  if(hostAggState.key === key) return;
+  hostAggState.key = key;
+  if(unsubHostBluffs){ unsubHostBluffs(); unsubHostBluffs = null; }
+  if(unsubHostVotes){ unsubHostVotes(); unsubHostVotes = null; }
+
+  if(game.room.phase === 'bluff'){
+    unsubHostBluffs = onSnapshot(collection(db, 'rooms', game.code, 'rounds', String(game.room.roundIndex), 'bluffs'), (snap) => {
+      tryCloseBluffPhase(snap);
+    });
+  } else if(game.room.phase === 'vote'){
+    unsubHostVotes = onSnapshot(collection(db, 'rooms', game.code, 'rounds', String(game.room.roundIndex), 'votes'), (snap) => {
+      tryCloseVotePhase(snap);
+    });
+  }
+}
+
+async function tryCloseBluffPhase(bluffSnap){
+  if(!game.room || game.room.phase !== 'bluff') return;
+  if(bluffSnap.size < game.players.length) return;
+  if(bluffSnap.size === 0) return;
+
+  const roundIndex = game.room.roundIndex;
+  const answer = game.localRounds[roundIndex].a;
+  const byValue = new Map();
+  bluffSnap.forEach(d => {
+    const v = d.data().value;
+    if(!byValue.has(v)) byValue.set(v, { value: v, authorUids: [] });
+    byValue.get(v).authorUids.push(d.id);
+  });
+  if(!byValue.has(answer)) byValue.set(answer, { value: answer, authorUids: [] });
+  const groupsFull = shuffle(Array.from(byValue.values())).map((g,i) => ({
+    ...g, id: String.fromCharCode(65+i), isTruth: g.value === answer,
+  }));
+  game.groupsFull = groupsFull;
+  persistHostRecovery();
+
+  const batch = writeBatch(db);
+  const eligibleVoterUids = [];
+  for(const p of game.players){
+    const ownIds = groupsFull.filter(g => g.authorUids.includes(p.id)).map(g => g.id);
+    batch.set(doc(db, 'rooms', game.code, 'players', p.id), { ownGroupIds: ownIds }, { merge: true });
+    if(ownIds.length < groupsFull.length) eligibleVoterUids.push(p.id);
+  }
+  batch.set(doc(db, 'rooms', game.code), {
+    phase: 'vote',
+    groups: groupsFull.map(g => ({ id: g.id, value: g.value })),
+    eligibleVoterUids,
+  }, { merge: true });
+  await batch.commit();
+}
+
+async function tryCloseVotePhase(voteSnap){
+  if(!game.room || game.room.phase !== 'vote') return;
+  const eligible = game.room.eligibleVoterUids || [];
+  if(eligible.length === 0) return;
+  if(voteSnap.size < eligible.length) return;
+
+  const groupsFull = game.groupsFull;
+  if(!groupsFull) return;
+
+  const voteMap = {};
+  voteSnap.forEach(d => { voteMap[d.id] = d.data().groupId; });
+
+  const deltas = {};
+  game.players.forEach(p => deltas[p.id] = 0);
+  for(const g of groupsFull){
+    const voters = Object.entries(voteMap).filter(([,gid]) => gid === g.id).map(([u]) => u);
+    g.voteCount = voters.length;
+    if(g.isTruth){
+      voters.forEach(u => { deltas[u] = (deltas[u]||0) + 2; });
+      g.authorUids.forEach(u => { deltas[u] = (deltas[u]||0) + 2; });
+    } else if(voters.length > 0){
+      g.authorUids.forEach(u => { deltas[u] = (deltas[u]||0) + voters.length; });
+    }
+  }
+
+  const batch = writeBatch(db);
+  for(const p of game.players){
+    if(deltas[p.id]) batch.set(doc(db, 'rooms', game.code, 'players', p.id), { score: increment(deltas[p.id]), ownGroupIds: [] }, { merge: true });
+    else batch.set(doc(db, 'rooms', game.code, 'players', p.id), { ownGroupIds: [] }, { merge: true });
+  }
+  batch.set(doc(db, 'rooms', game.code), {
+    phase: 'reveal',
+    reveal: {
+      answer: game.localRounds[game.room.roundIndex].a,
+      groups: groupsFull.map(g => ({
+        id: g.id, value: g.value, isTruth: g.isTruth, voteCount: g.voteCount || 0,
+        authorNames: g.authorUids.map(u => (game.players.find(p => p.id === u) || {}).name).filter(Boolean),
+      })),
+      deltas,
+    },
+  }, { merge: true });
+  await batch.commit();
+}
+
+// ---------------- Player actions ----------------
+async function startGame(){
+  if(!game.isHost || !game.room || game.room.phase !== 'lobby') return;
+  if(game.players.length < 3) return;
+  const q = game.localRounds[0];
+  await setDoc(doc(db, 'rooms', game.code), {
+    phase: 'bluff', roundIndex: 0, question: { text: q.q, unit: q.unit }, groups: null, reveal: null, eligibleVoterUids: null,
+  }, { merge: true });
+}
+
+async function submitBluff(){
+  const raw = $('bluff-value') ? $('bluff-value').value : '';
+  const val = parseFloat(String(raw).replace(',','.'));
+  if(isNaN(val)) return;
+  await setDoc(doc(db, 'rooms', game.code, 'rounds', String(game.room.roundIndex), 'bluffs', uid), {
+    value: Math.round(val), submittedAt: serverTimestamp(),
+  });
+  game.hasSubmittedBluff = true;
+  render();
+}
+
+function selectGroup(id){
+  const own = (game.ownPlayer && game.ownPlayer.ownGroupIds) || [];
+  if(own.includes(id)) return;
+  game.selectedGroupId = id;
+  render();
+}
+
+async function submitVote(){
+  if(!game.selectedGroupId) return;
+  await setDoc(doc(db, 'rooms', game.code, 'rounds', String(game.room.roundIndex), 'votes', uid), {
+    groupId: game.selectedGroupId, submittedAt: serverTimestamp(),
+  });
+  game.hasSubmittedVote = true;
+  render();
+}
+
+async function nextRound(){
+  if(!game.isHost || !game.room || game.room.phase !== 'reveal') return;
+  const nextIndex = game.room.roundIndex + 1;
+  if(nextIndex >= game.localRounds.length){
+    await setDoc(doc(db, 'rooms', game.code), { phase: 'final' }, { merge: true });
+  } else {
+    const q = game.localRounds[nextIndex];
+    await setDoc(doc(db, 'rooms', game.code), {
+      phase: 'bluff', roundIndex: nextIndex, question: { text: q.q, unit: q.unit }, groups: null, reveal: null, eligibleVoterUids: null,
+    }, { merge: true });
+  }
+}
+
+function copyInviteLink(){
+  const url = location.origin + location.pathname + '?code=' + game.code;
+  if(navigator.clipboard) navigator.clipboard.writeText(url).catch(()=>{});
+  const btn = $('copy-link-btn');
+  if(btn){ const old = btn.textContent; btn.textContent = 'Kopiert!'; setTimeout(()=>{ if($('copy-link-btn')) $('copy-link-btn').textContent = old; }, 1500); }
+}
+
+// ---------------- Rendering ----------------
+function topBar(){
+  return `
+    <div class="top-bar">
+      <span class="tag">${game.code ? ('Raum ' + game.code) : ''}</span>
+      <button class="link-btn" onclick="window.__np.leaveGame()">Spiel verlassen</button>
+    </div>
+  `;
+}
+
+function renderLanding(){
+  return `
+    <h1>Nobody's <em>Perfect</em></h1>
+    <p class="lede">Jede:r spielt auf dem eigenen Handy mit. Erstell einen Raum und teil den Code, oder tritt mit einem Code bei.</p>
+
+    ${ui.joinError ? `<div class="error-box">${escapeHtml(ui.joinError)}</div>` : ''}
+
+    <div class="tabs">
+      <button class="tab ${ui.tab==='create'?'active':''}" onclick="window.__np.setTab('create')">Raum erstellen</button>
+      <button class="tab ${ui.tab==='join'?'active':''}" onclick="window.__np.setTab('join')">Beitreten</button>
+    </div>
+
+    ${ui.tab === 'create' ? `
+      <div class="card">
+        <label class="field" for="create-name">Dein Name</label>
+        <input type="text" id="create-name" placeholder="z.B. Kilian" maxlength="20" value="${escapeHtml(ui.createName)}">
+      </div>
+      <div class="card">
+        <label class="field" for="rounds-select">Anzahl Fragen</label>
+        <select id="rounds-select">
+          <option value="5">5 Fragen (schnelle Runde)</option>
+          <option value="8" selected>8 Fragen (empfohlen)</option>
+          <option value="12">12 Fragen (langer Abend)</option>
+          <option value="all">Alle ${QUESTIONS.length} Fragen</option>
+        </select>
+      </div>
+      <button class="btn" onclick="window.__np.createRoom()">Raum erstellen</button>
+      <p class="btn-hint" style="font-size:13px;color:var(--stone);margin:10px 2px 0">Du wirst Host: dein Handy muss während des ganzen Spiels geöffnet bleiben, es übernimmt die Spiellogik.</p>
+    ` : `
+      <div class="card">
+        <label class="field" for="join-name">Dein Name</label>
+        <input type="text" id="join-name" placeholder="z.B. Kilian" maxlength="20" value="${escapeHtml(ui.joinName)}" style="margin-bottom:14px">
+        <label class="field" for="join-code">Raum-Code</label>
+        <input type="text" id="join-code" class="code-input" placeholder="ABCDE" maxlength="5" value="${escapeHtml(ui.joinCode)}">
+      </div>
+      <button class="btn coral" onclick="window.__np.joinRoom()">Beitreten</button>
+    `}
+
+    <div class="card" style="margin-top:16px">
+      <button class="rules-toggle" onclick="window.__np.toggleRules()">${ui.rulesOpen?'Regeln ausblenden':'Wie wird gespielt?'}</button>
+      ${ui.rulesOpen ? `
+        <div class="rules-body">
+          <ol>
+            <li>Eine Wissensfrage mit einer Zahl als Antwort erscheint auf allen Handys.</li>
+            <li>Jede:r tippt heimlich eine eigene Schätzung ein (auch wenn ihr die Antwort nicht kennt &mdash; einfach bluffen!).</li>
+            <li>Alle Antworten inkl. der echten werden gemischt gezeigt. Jede:r stimmt heimlich ab, welche die echte ist.</li>
+            <li>Punkte: +2 fürs Finden der echten Antwort. +1 pro Person, die auf deinen Bluff reinfällt. +2 Bonus bei exaktem Treffer.</li>
+            <li>Nach der letzten Frage gewinnt, wer die meisten Punkte hat.</li>
+          </ol>
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function renderLobby(){
+  const canStart = game.isHost && game.players.length >= 3;
+  return `
+    ${topBar()}
+    <div class="room-code-box">
+      <p class="lbl">Raum-Code &mdash; teil ihn mit deinen Freund:innen</p>
+      <p class="code">${game.code}</p>
+      <button class="btn ghost small" id="copy-link-btn" style="margin-top:10px" onclick="window.__np.copyInviteLink()">Link kopieren</button>
+    </div>
+    <h2 style="font-family:var(--font-sans);font-size:16px;margin:0 0 4px">Mitspieler:innen (${game.players.length})</h2>
+    <div class="player-list">
+      ${game.players.map((p,i)=>`
+        <div class="player-chip">
+          <span class="num">${i+1}</span>
+          <span class="nm">${escapeHtml(p.name)}</span>
+          ${p.id === game.room.hostUid ? '<span class="host-badge">Host</span>' : ''}
+        </div>
+      `).join('')}
+    </div>
+    <div style="height:18px"></div>
+    ${game.isHost ? `
+      <button class="btn" ${canStart?'':'disabled'} onclick="window.__np.startGame()">
+        Spiel starten${canStart?'':' (min. 3 Spieler)'}
+      </button>
+    ` : `
+      <div class="wait-screen">
+        <div class="wait-icon">⏳</div>
+        <p class="wait-title">Warte auf den Host</p>
+        <p class="wait-hint">Sobald genug Leute da sind, startet der Host das Spiel.</p>
+      </div>
+    `}
+  `;
+}
+
+function renderBluff(){
+  const q = game.room.question;
+  if(game.hasSubmittedBluff){
+    return `
+      ${topBar()}
+      <p class="progress">Frage <span class="fill">${game.room.roundIndex+1}</span> von ${game.room.totalRounds}</p>
+      <div class="wait-screen">
+        <div class="wait-icon">📝</div>
+        <p class="wait-title">Bluff abgeschickt!</p>
+        <p class="wait-hint">Warte, bis alle anderen auch ihre Schätzung eingetippt haben.</p>
+      </div>
+    `;
+  }
+  return `
+    ${topBar()}
+    <p class="progress">Frage <span class="fill">${game.room.roundIndex+1}</span> von ${game.room.totalRounds}</p>
+    <div class="q-box">
+      <p class="q-eyebrow">Deine Schätzung</p>
+      <p class="q-text">${escapeHtml(q.text)}</p>
+    </div>
+    <input type="number" inputmode="decimal" id="bluff-value" placeholder="Deine Schätzung (auch geraten ist ok!)"
+      onkeydown="if(event.key==='Enter'){event.preventDefault();window.__np.submitBluff();}">
+    ${q.unit ? `<p class="unit-suffix">Einheit: ${escapeHtml(q.unit)}</p>` : ''}
+    <div style="height:16px"></div>
+    <button class="btn" onclick="window.__np.submitBluff()">Bluff abschicken</button>
+  `;
+}
+
+function renderVote(){
+  const q = game.room.question;
+  const groups = game.room.groups || [];
+  const ownIds = (game.ownPlayer && game.ownPlayer.ownGroupIds) || [];
+  const eligible = (game.room.eligibleVoterUids || []).includes(uid);
+
+  if(!eligible || game.hasSubmittedVote){
+    return `
+      ${topBar()}
+      <p class="progress">Frage <span class="fill">${game.room.roundIndex+1}</span> von ${game.room.totalRounds}</p>
+      <div class="wait-screen">
+        <div class="wait-icon">🗳️</div>
+        <p class="wait-title">${eligible ? 'Stimme abgegeben!' : 'Alle Antworten waren identisch mit deiner'}</p>
+        <p class="wait-hint">Warte, bis alle anderen abgestimmt haben.</p>
+      </div>
+    `;
+  }
+
+  return `
+    ${topBar()}
+    <p class="progress">Frage <span class="fill">${game.room.roundIndex+1}</span> von ${game.room.totalRounds}</p>
+    <div class="q-box">
+      <p class="q-eyebrow">Welche Antwort ist die echte?</p>
+      <p class="q-text">${escapeHtml(q.text)}</p>
+    </div>
+    <div class="opt-list">
+      ${groups.map(g => {
+        const isOwn = ownIds.includes(g.id);
+        const sel = game.selectedGroupId === g.id;
+        return `
+          <button class="opt ${sel?'selected':''} ${isOwn?'disabled':''}" ${isOwn?'disabled':''} onclick="window.__np.selectGroup('${g.id}')">
+            <span class="letter">${g.id}</span>
+            <span class="val">${fmt(g.value)}${q.unit?(' '+escapeHtml(q.unit)):''}</span>
+            ${isOwn?'<span class="own-note">Deine Antwort</span>':''}
+          </button>
+        `;
+      }).join('')}
+    </div>
+    <button class="btn" ${game.selectedGroupId?'':'disabled'} onclick="window.__np.submitVote()">Stimme bestätigen</button>
+  `;
+}
+
+function renderReveal(){
+  const rv = game.room.reveal;
+  if(!rv) return `${topBar()}<div class="wait-screen"><div class="wait-icon">🔎</div><p class="wait-title">Werte aus…</p></div>`;
+  const sortedGroups = rv.groups.slice().sort((a,b)=> (b.isTruth?1:0)-(a.isTruth?1:0));
+  const scoreOrder = game.players.map(p=>({p, delta: rv.deltas[p.id]||0})).sort((a,b)=>b.p.score-a.p.score);
+  const isLast = game.room.roundIndex >= game.room.totalRounds - 1;
+  const q = game.room.question;
+
+  return `
+    ${topBar()}
+    <p class="progress">Auflösung &middot; Frage ${game.room.roundIndex+1} von ${game.room.totalRounds}</p>
+    <div class="q-box">
+      <p class="q-eyebrow">Richtige Antwort</p>
+      <p class="q-text">${fmt(rv.answer)}${q.unit?(' '+escapeHtml(q.unit)):''}</p>
+    </div>
+    ${sortedGroups.map(g => `
+      <div class="rv-item ${g.isTruth?'truth':''}">
+        <div class="rv-top">
+          <span class="letter">${g.id}</span>
+          <span class="val">${fmt(g.value)}${q.unit?(' '+escapeHtml(q.unit)):''}</span>
+          ${g.isTruth?'<span class="badge">Richtig</span>':''}
+        </div>
+        <p class="rv-meta">
+          ${g.authorNames.length ? `<b>${g.authorNames.map(escapeHtml).join(', ')}</b> ${g.authorNames.length===1?'hat':'haben'} das${g.isTruth?' exakt getroffen':' geschätzt'}. ` : (g.isTruth?'Von niemandem geraten. ':'')}
+          ${g.voteCount>0 ? `${g.voteCount} ${g.voteCount===1?'Stimme':'Stimmen'} erhalten.` : 'Keine Stimmen.'}
+        </p>
+      </div>
+    `).join('')}
+
+    <h2 style="font-family:var(--font-sans);font-size:16px;margin:20px 0 8px">Punktestand</h2>
+    <div class="score-list">
+      ${scoreOrder.map(({p,delta})=>`
+        <div class="score-row">
+          <span class="nm">${escapeHtml(p.name)}</span>
+          <span class="pts">${p.score}</span>
+          ${delta>0?`<span class="delta">+${delta}</span>`:''}
+        </div>
+      `).join('')}
+    </div>
+
+    <div style="height:18px"></div>
+    ${game.isHost ? `
+      <button class="btn" onclick="window.__np.nextRound()">${isLast?'Endergebnis anzeigen':'Nächste Frage'} &rarr;</button>
+    ` : `
+      <div class="wait-screen">
+        <div class="wait-icon">⏳</div>
+        <p class="wait-title">Warte auf den Host</p>
+        <p class="wait-hint">Der Host macht mit der nächsten Frage weiter.</p>
+      </div>
+    `}
+  `;
+}
+
+function renderFinal(){
+  const ranked = game.players.slice().sort((a,b)=>b.score-a.score);
+  const medals = ['🥇','🥈','🥉'];
+  return `
+    ${topBar()}
+    <div class="center">
+      <div class="emoji-big">🏆</div>
+      <h1 style="font-size:34px;margin:0 0 6px">Spiel <em>vorbei</em></h1>
+      <p class="lede" style="margin:0 auto 4px">${ranked.length?`${escapeHtml(ranked[0].name)} gewinnt mit ${ranked[0].score} Punkten!`:''}</p>
+    </div>
+    <div class="score-list" style="margin-top:20px">
+      ${ranked.map((p,i)=>`
+        <div class="score-row ${i===0?'first':''}">
+          <span class="rank">${medals[i]||(i+1)}</span>
+          <span class="nm">${escapeHtml(p.name)}</span>
+          <span class="pts">${p.score}</span>
+        </div>
+      `).join('')}
+    </div>
+    <div style="height:20px"></div>
+    <button class="btn" onclick="window.__np.leaveGame()">Neues Spiel</button>
+  `;
+}
+
+function render(){
+  $('top-tag').textContent = ui.view === 'landing' ? "Nobody's Perfect Online" : '';
+
+  if(ui.view === 'loading'){
+    appEl.innerHTML = `<div class="center" style="padding:60px 0"><p style="color:var(--stone)">Lädt…</p></div>`;
+    return;
+  }
+  if(ui.view === 'landing'){
+    appEl.innerHTML = renderLanding();
+    return;
+  }
+  if(ui.view === 'game'){
+    if(!game.room || !game.players.length){
+      appEl.innerHTML = `${topBar()}<div class="center" style="padding:40px 0"><p style="color:var(--stone)">Verbinde…</p></div>`;
+      return;
+    }
+    switch(game.room.phase){
+      case 'lobby': appEl.innerHTML = renderLobby(); break;
+      case 'bluff': appEl.innerHTML = renderBluff(); break;
+      case 'vote': appEl.innerHTML = renderVote(); break;
+      case 'reveal': appEl.innerHTML = renderReveal(); break;
+      case 'final': appEl.innerHTML = renderFinal(); break;
+      default: appEl.innerHTML = `<div class="center">Unbekannter Spielstatus.</div>`;
+    }
+  }
+}
+
+window.__np = {
+  setTab(t){ ui.tab = t; ui.joinError=''; render(); },
+  toggleRules(){ ui.rulesOpen = !ui.rulesOpen; render(); },
+  createRoom, joinRoom, leaveGame, startGame, submitBluff, selectGroup, submitVote, nextRound, copyInviteLink,
+};
+</script>
+</body>
+</html>
