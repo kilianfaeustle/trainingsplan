@@ -151,6 +151,14 @@ label.field{display:block;font-size:13px;font-weight:700;letter-spacing:.04em;te
 .tempo-row .nm{flex:1;font-weight:600;font-size:14.5px}
 .tempo-row .secs{font-size:13.5px;color:var(--stone);font-variant-numeric:tabular-nums}
 
+.shame-box{
+  display:flex;align-items:center;gap:14px;background:var(--coral-50);border:1px solid var(--coral-100);
+  border-radius:var(--radius-lg);padding:14px 16px;margin:16px 0 0;
+}
+.shame-img{flex:none;width:64px;height:auto;border-radius:var(--radius-sm)}
+.shame-text{margin:0;font-size:14.5px;color:var(--coral-700);line-height:1.5}
+.shame-text b{color:var(--ink)}
+
 .opt-list{display:flex;flex-direction:column;gap:10px;margin:16px 0 20px}
 .opt{
   display:flex;align-items:center;gap:12px;text-align:left;width:100%;
@@ -293,6 +301,22 @@ const QUESTIONS = [
   {q:"Wie viele Golfbälle passen theoretisch in einen ausgewachsenen Blauwal (kuriose Schätzfrage, in Tausend)?", a:600, unit:"Tsd.", ex:"Grobe Schätzung auf Basis des Körpervolumens eines Blauwals &mdash; eine eher unernste, aber beliebte Trivia-Frage."},
 ];
 
+// Optional Ü18-Zusatzpaket, wird nur bei aktiviertem Schalter in den Fragenpool gemischt.
+const SPICY_QUESTIONS = [
+  {q:"Wie oft denkt ein Mann laut Studien im Schnitt PRO TAG an Sex? (Der Mythos sagt alle 7 Sekunden...)", a:19, unit:"Mal am Tag", ex:"Der Mythos 'alle 7 Sekunden' würde über 8000 Mal am Tag bedeuten &mdash; eine Studie der Ohio State University kam auf realistischere ~19 Mal."},
+  {q:"Wie lange dauert Geschlechtsverkehr im Schnitt laut einer oft zitierten Stoppuhr-Studie (in Minuten)?", a:5, unit:"Minuten", ex:"Eine kanadische Studie von 2005 kam auf eine mediane Dauer von 5,4 Minuten von Anfang bis Orgasmus."},
+  {q:"Wie viele Kondome werden weltweit schätzungsweise PRO SEKUNDE benutzt?", a:850, unit:"Kondome/Sek.", ex:"Hochgerechnet aus rund 27 Milliarden weltweit verkauften Kondomen pro Jahr."},
+  {q:"Wie viele Ehen hat die Rekordhalterin für die meisten Eheschließungen einer Person laut Guinness-Buch?", a:23, unit:"Ehen", ex:"Linda Wolfe aus den USA hält mit 23 Ehen (zwischen 1949 und 1991) den offiziellen Rekord."},
+  {q:"Wie lange dauerte der längste dokumentierte Kuss der Welt laut Guinness-Rekord (in Stunden)?", a:58, unit:"Stunden", ex:"Ein thailändisches Paar küsste sich 2013 ununterbrochen 58 Stunden und 35 Minuten lang."},
+  {q:"Wie alt sind Menschen laut Umfragen im Schnitt bei ihrem ersten Kuss?", a:15, unit:"Jahre", ex:"Der erste richtige Kuss passiert bei den meisten Menschen laut Umfragen in der frühen bis mittleren Pubertät."},
+  {q:"Wie viel Prozent der Deutschen geben in Umfragen zu, in einer Beziehung schon einmal fremdgegangen zu sein?", a:40, unit:"%", ex:"Die Zahlen schwanken stark je nach Studie und Definition, viele Umfragen landen aber im Bereich um 40%."},
+  {q:"Wie viele Kalorien verbrennt der Körper bei einem intensiven Zungenkuss ungefähr pro Minute?", a:5, unit:"kcal", ex:"Nicht gerade ein Workout-Ersatz, aber immerhin mehr als beim Nichtstun."},
+  {q:"Wie oft furzt ein Mensch im Schnitt pro Tag?", a:14, unit:"Mal", ex:"Macht in Summe etwa 0,5 bis 1,5 Liter produziertes Gas am Tag."},
+  {q:"Wie viele Tausend Liter Speichel produziert ein Mensch schätzungsweise im Laufe seines gesamten Lebens?", a:44, unit:"Tsd. Liter", ex:"Bei rund 1,5 Litern Speichel pro Tag kommt über ein 80-jähriges Leben einiges zusammen."},
+  {q:"Wie oft schaut ein durchschnittlicher Smartphone-Nutzer laut Studien pro Tag aufs Handy?", a:144, unit:"Mal", ex:"Das läuft auf ungefähr einen Blick alle 10 wachen Minuten hinaus."},
+  {q:"Wie viele Liter Bier trinkt ein Deutscher im Schnitt pro Jahr (Pro-Kopf-Verbrauch)?", a:88, unit:"Liter", ex:"Deutschland liegt damit international zwar weit vorne, der Verbrauch sinkt aber seit Jahren."},
+];
+
 function shuffle(arr){
   const a = arr.slice();
   for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
@@ -395,8 +419,10 @@ async function resumeRoom(code, isHost, name){
 async function createRoom(){
   const name = ($('create-name').value || '').trim();
   if(!name) return;
-  const count = $('rounds-select').value === 'all' ? QUESTIONS.length : Math.min(parseInt($('rounds-select').value,10), QUESTIONS.length);
-  const localRounds = shuffle(QUESTIONS).slice(0, count);
+  const spicyOn = $('spicy-toggle') ? $('spicy-toggle').checked : false;
+  const pool = spicyOn ? QUESTIONS.concat(SPICY_QUESTIONS) : QUESTIONS;
+  const count = $('rounds-select').value === 'all' ? pool.length : Math.min(parseInt($('rounds-select').value,10), pool.length);
+  const localRounds = shuffle(pool).slice(0, count);
 
   let code = null;
   for(let attempt=0; attempt<8; attempt++){
@@ -480,6 +506,7 @@ function attachRoomListeners(){
       game.hasSubmittedVote = false;
       game.selectedGroupId = null;
       game.bluffInputVal = '';
+      syncOwnSubmissionStatus();
     }
     if(game.isHost) maybeAttachHostAggregation();
     render();
@@ -494,6 +521,31 @@ function attachRoomListeners(){
     game.ownPlayer = snap.exists() ? snap.data() : null;
     render();
   });
+}
+
+// Recovers hasSubmittedBluff/hasSubmittedVote after a reload, so a player who
+// already answered doesn't get shown the input form again.
+async function syncOwnSubmissionStatus(){
+  if(!game.room || !game.code) return;
+  const roundIndex = game.room.roundIndex;
+  try{
+    if(game.room.phase === 'bluff' && !game.hasSubmittedBluff){
+      const snap = await getDoc(doc(db, 'rooms', game.code, 'rounds', String(roundIndex), 'bluffs', uid));
+      if(snap.exists() && game.room && game.room.roundIndex === roundIndex && game.room.phase === 'bluff'){
+        game.hasSubmittedBluff = true;
+        render();
+      }
+    } else if(game.room.phase === 'vote' && !game.hasSubmittedVote){
+      const snap = await getDoc(doc(db, 'rooms', game.code, 'rounds', String(roundIndex), 'votes', uid));
+      if(snap.exists() && game.room && game.room.roundIndex === roundIndex && game.room.phase === 'vote'){
+        game.hasSubmittedVote = true;
+        render();
+      }
+    }
+  }catch(e){
+    // Old security rules not updated yet, or offline — fall back gracefully
+    // to showing the input form (worst case: a harmless re-submit prompt).
+  }
 }
 
 let hostAggState = { round: null, phase: null };
@@ -722,8 +774,17 @@ function renderLanding(){
           <option value="5">5 Fragen (schnelle Runde)</option>
           <option value="8" selected>8 Fragen (empfohlen)</option>
           <option value="12">12 Fragen (langer Abend)</option>
-          <option value="all">Alle ${QUESTIONS.length} Fragen</option>
+          <option value="all">Alle verfügbaren Fragen</option>
         </select>
+      </div>
+      <div class="card">
+        <label class="row" style="cursor:pointer;gap:12px" for="spicy-toggle">
+          <input type="checkbox" id="spicy-toggle" style="width:20px;height:20px;flex:none;accent-color:var(--coral-500)">
+          <span>
+            <span style="display:block;font-weight:700;font-size:15.5px">🌶️ Ü18-Fragen mit reinmischen</span>
+            <span style="display:block;font-size:13.5px;color:var(--stone);margin-top:2px">Ein paar spicy &amp; ziemlich sinnlose Fragen werden zufällig unter die normalen gemischt. Nur für erwachsene Runden.</span>
+          </span>
+        </label>
       </div>
       <button class="btn" onclick="window.__np.createRoom()">Raum erstellen</button>
       <p class="btn-hint" style="font-size:13px;color:var(--stone);margin:10px 2px 0">Du wirst Host: dein Handy muss während des ganzen Spiels geöffnet bleiben, es übernimmt die Spiellogik.</p>
@@ -886,6 +947,10 @@ function renderReveal(){
   const isLast = game.room.roundIndex >= game.room.totalRounds - 1;
   const q = game.room.question;
 
+  const wrongVoterNames = Array.from(new Set(
+    rv.groups.filter(g => !g.isTruth).flatMap(g => g.voterNames || [])
+  ));
+
   return `
     ${topBar()}
     <p class="progress">Auflösung &middot; Frage ${game.room.roundIndex+1} von ${game.room.totalRounds}</p>
@@ -894,6 +959,44 @@ function renderReveal(){
       <p class="q-text">${fmt(rv.answer)}${q.unit?(' '+escapeHtml(q.unit)):''}</p>
       ${rv.explanation ? `<p class="q-explain">${escapeHtml(rv.explanation)}</p>` : ''}
     </div>
+
+    ${rv.timings && rv.timings.length > 1 ? `
+      <h2 style="font-family:var(--font-sans);font-size:16px;margin:16px 0 8px">Tempo-Check</h2>
+      <div class="tempo-list">
+        ${rv.timings.map((t,i) => {
+          const isFastest = i === 0;
+          const isSlowest = i === rv.timings.length - 1;
+          const emoji = isSlowest ? '🦥' : (isFastest ? '⚡' : '');
+          return `
+            <div class="tempo-row">
+              <span class="badge-emoji">${emoji}</span>
+              <span class="nm">${escapeHtml(t.name)}${isSlowest?' <span style="font-weight:400;color:var(--stone)">&mdash; Faultier der Runde</span>':''}</span>
+              <span class="secs">${(t.ms/1000).toFixed(1)}s</span>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    ` : ''}
+
+    <h2 style="font-family:var(--font-sans);font-size:16px;margin:16px 0 8px">Punktestand</h2>
+    <div class="score-list">
+      ${scoreOrder.map(({p,delta})=>`
+        <div class="score-row">
+          <span class="nm">${escapeHtml(p.name)}</span>
+          <span class="pts">${p.score}</span>
+          ${delta>0?`<span class="delta">+${delta}</span>`:''}
+        </div>
+      `).join('')}
+    </div>
+
+    ${wrongVoterNames.length ? `
+      <div class="shame-box">
+        <img src="assets/geleanarscht.jpeg" alt="GeLeanArscht" class="shame-img">
+        <p class="shame-text">Reingefallen: <b>${wrongVoterNames.map(escapeHtml).join(', ')}</b></p>
+      </div>
+    ` : ''}
+
+    <h2 style="font-family:var(--font-sans);font-size:16px;margin:20px 0 8px">Antworten im Detail</h2>
     ${sortedGroups.map(g => `
       <div class="rv-item ${g.isTruth?'truth':''}">
         <div class="rv-top">
@@ -911,35 +1014,6 @@ function renderReveal(){
         </p>
       </div>
     `).join('')}
-
-    ${rv.timings && rv.timings.length > 1 ? `
-      <h2 style="font-family:var(--font-sans);font-size:16px;margin:20px 0 8px">Tempo-Check</h2>
-      <div class="tempo-list">
-        ${rv.timings.map((t,i) => {
-          const isFastest = i === 0;
-          const isSlowest = i === rv.timings.length - 1;
-          const emoji = isSlowest ? '🦥' : (isFastest ? '⚡' : '');
-          return `
-            <div class="tempo-row">
-              <span class="badge-emoji">${emoji}</span>
-              <span class="nm">${escapeHtml(t.name)}${isSlowest?' <span style="font-weight:400;color:var(--stone)">&mdash; Faultier der Runde</span>':''}</span>
-              <span class="secs">${(t.ms/1000).toFixed(1)}s</span>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    ` : ''}
-
-    <h2 style="font-family:var(--font-sans);font-size:16px;margin:20px 0 8px">Punktestand</h2>
-    <div class="score-list">
-      ${scoreOrder.map(({p,delta})=>`
-        <div class="score-row">
-          <span class="nm">${escapeHtml(p.name)}</span>
-          <span class="pts">${p.score}</span>
-          ${delta>0?`<span class="delta">+${delta}</span>`:''}
-        </div>
-      `).join('')}
-    </div>
 
     <div style="height:18px"></div>
     ${game.isHost ? `
