@@ -145,6 +145,18 @@ label.field{display:block;font-size:13px;font-weight:700;letter-spacing:.04em;te
 .presence-chip .dot{width:8px;height:8px;border-radius:50%;background:var(--stone-light);flex:none}
 .presence-chip.done .dot{background:var(--sage-500)}
 
+.ready-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  background:var(--ink);color:#fff;border-radius:var(--radius-lg);padding:12px 16px;margin:0 0 16px;
+}
+.ready-bar .ready-count{font-size:13.5px;font-weight:700}
+.ready-bar .ready-done{font-size:13.5px;font-weight:700;color:var(--sage-500)}
+.ready-bar .btn{width:auto;padding:9px 16px;font-size:13.5px;box-shadow:none}
+
+.tempo-card{
+  background:var(--coral-50);border:1.5px solid var(--coral-100);border-radius:var(--radius-lg);
+  padding:16px 18px;margin:0 0 16px;
+}
 .tempo-list{display:flex;flex-direction:column;gap:6px;margin:10px 0 0}
 .tempo-row{display:flex;align-items:center;gap:10px;background:var(--paper);border-radius:var(--radius-md);padding:9px 13px}
 .tempo-row .badge-emoji{flex:none;font-size:16px;width:20px;text-align:center}
@@ -322,6 +334,32 @@ function shuffle(arr){
   for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
   return a;
 }
+
+// Draws `count` questions from `pool` without repeats until the whole pool has
+// been dealt once (persisted per device via localStorage), so back-to-back
+// games don't keep pulling the same questions out of a small fixed bank.
+function drawQuestions(pool, poolKey, count){
+  const storageKey = 'np_deck_' + poolKey;
+  let deck = null;
+  try{ deck = JSON.parse(localStorage.getItem(storageKey) || 'null'); }catch(e){}
+  if(!deck || !Array.isArray(deck.order) || deck.order.length !== pool.length){
+    deck = { order: shuffle(pool.map((_,i)=>i)), pos: 0 };
+  }
+  const result = [];
+  while(result.length < count && result.length < pool.length){
+    if(deck.pos >= deck.order.length){
+      const lastCard = deck.order[deck.order.length-1];
+      let fresh = shuffle(pool.map((_,i)=>i));
+      if(fresh.length > 1 && fresh[0] === lastCard){ [fresh[0],fresh[1]] = [fresh[1],fresh[0]]; }
+      deck = { order: fresh, pos: 0 };
+    }
+    result.push(pool[deck.order[deck.pos]]);
+    deck.pos++;
+  }
+  try{ localStorage.setItem(storageKey, JSON.stringify(deck)); }catch(e){}
+  return result;
+}
+
 function fmt(n){ return Number(n).toLocaleString('de-DE'); }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no O/0, I/1
@@ -329,7 +367,7 @@ function genCode(){ let s=''; for(let i=0;i<5;i++) s+=CODE_ALPHABET[Math.floor(M
 
 // ---------------- App state ----------------
 let uid = null;
-let unsubRoom = null, unsubPlayers = null, unsubOwnPlayer = null, unsubHostBluffs = null, unsubHostVotes = null;
+let unsubRoom = null, unsubPlayers = null, unsubOwnPlayer = null, unsubHostBluffs = null, unsubHostVotes = null, unsubReady = null;
 
 let ui = {
   view: 'loading', // loading | landing | game
@@ -354,6 +392,8 @@ let game = {
   hasSubmittedVote: false,
   selectedGroupId: null,
   bluffInputVal: '',
+  readyUids: [],       // live: who has confirmed they've seen this round's reveal
+  hasMarkedReady: false,
 };
 
 function persistHostRecovery(){
@@ -421,8 +461,9 @@ async function createRoom(){
   if(!name) return;
   const spicyOn = $('spicy-toggle') ? $('spicy-toggle').checked : false;
   const pool = spicyOn ? QUESTIONS.concat(SPICY_QUESTIONS) : QUESTIONS;
+  const poolKey = spicyOn ? 'spicy' : 'base';
   const count = $('rounds-select').value === 'all' ? pool.length : Math.min(parseInt($('rounds-select').value,10), pool.length);
-  const localRounds = shuffle(pool).slice(0, count);
+  const localRounds = drawQuestions(pool, poolKey, count);
 
   let code = null;
   for(let attempt=0; attempt<8; attempt++){
@@ -488,8 +529,10 @@ function detachRoomListeners(){
   if(unsubOwnPlayer) unsubOwnPlayer();
   if(unsubHostBluffs) unsubHostBluffs();
   if(unsubHostVotes) unsubHostVotes();
-  unsubRoom = unsubPlayers = unsubOwnPlayer = unsubHostBluffs = unsubHostVotes = null;
+  if(unsubReady) unsubReady();
+  unsubRoom = unsubPlayers = unsubOwnPlayer = unsubHostBluffs = unsubHostVotes = unsubReady = null;
   hostAggState = { key: null };
+  readyListenerState = { key: null };
 }
 
 function attachRoomListeners(){
@@ -506,9 +549,12 @@ function attachRoomListeners(){
       game.hasSubmittedVote = false;
       game.selectedGroupId = null;
       game.bluffInputVal = '';
+      game.hasMarkedReady = false;
+      game.readyUids = [];
       syncOwnSubmissionStatus();
     }
     if(game.isHost) maybeAttachHostAggregation();
+    maybeAttachReadyListener();
     render();
   });
 
@@ -546,6 +592,33 @@ async function syncOwnSubmissionStatus(){
     // Old security rules not updated yet, or offline — fall back gracefully
     // to showing the input form (worst case: a harmless re-submit prompt).
   }
+}
+
+let readyListenerState = { key: null };
+function maybeAttachReadyListener(){
+  if(!game.room) return;
+  if(game.room.phase !== 'reveal'){
+    if(unsubReady){ unsubReady(); unsubReady = null; }
+    readyListenerState.key = null;
+    return;
+  }
+  const key = game.room.roundIndex + ':ready';
+  if(readyListenerState.key === key) return;
+  readyListenerState.key = key;
+  if(unsubReady){ unsubReady(); unsubReady = null; }
+  unsubReady = onSnapshot(collection(db, 'rooms', game.code, 'rounds', String(game.room.roundIndex), 'ready'), (snap) => {
+    game.readyUids = snap.docs.map(d => d.id);
+    render();
+  });
+}
+
+async function markReady(){
+  if(!game.room || game.room.phase !== 'reveal' || !game.code) return;
+  try{
+    await setDoc(doc(db, 'rooms', game.code, 'rounds', String(game.room.roundIndex), 'ready', uid), { readyAt: serverTimestamp() });
+    game.hasMarkedReady = true;
+    render();
+  }catch(e){ /* rule not updated yet — ignore, button stays visible */ }
 }
 
 let hostAggState = { round: null, phase: null };
@@ -719,6 +792,12 @@ async function submitVote(){
 
 async function nextRound(){
   if(!game.isHost || !game.room || game.room.phase !== 'reveal') return;
+  const readyCount = (game.readyUids || []).length;
+  const total = game.players.length;
+  if(readyCount < total){
+    const proceed = confirm(`Erst ${readyCount} von ${total} sind bereit für die nächste Frage. Trotzdem weiter?`);
+    if(!proceed) return;
+  }
   const nextIndex = game.room.roundIndex + 1;
   if(nextIndex >= game.localRounds.length){
     await setDoc(doc(db, 'rooms', game.code), { phase: 'final' }, { merge: true });
@@ -951,9 +1030,20 @@ function renderReveal(){
     rv.groups.filter(g => !g.isTruth).flatMap(g => g.voterNames || [])
   ));
 
+  const readyCount = (game.readyUids || []).length;
+  const totalPlayers = game.players.length;
+
   return `
     ${topBar()}
     <p class="progress">Auflösung &middot; Frage ${game.room.roundIndex+1} von ${game.room.totalRounds}</p>
+
+    <div class="ready-bar">
+      <span class="ready-count">${readyCount}/${totalPlayers} bereit für die nächste Frage</span>
+      ${game.hasMarkedReady
+        ? '<span class="ready-done">&#10003; Du bist bereit</span>'
+        : '<button class="btn coral small" onclick="window.__np.markReady()">&#10003; Ich bin bereit</button>'}
+    </div>
+
     <div class="q-box">
       <p class="q-eyebrow">Richtige Antwort</p>
       <p class="q-text">${fmt(rv.answer)}${q.unit?(' '+escapeHtml(q.unit)):''}</p>
@@ -961,20 +1051,22 @@ function renderReveal(){
     </div>
 
     ${rv.timings && rv.timings.length > 1 ? `
-      <h2 style="font-family:var(--font-sans);font-size:16px;margin:16px 0 8px">Tempo-Check</h2>
-      <div class="tempo-list">
-        ${rv.timings.map((t,i) => {
-          const isFastest = i === 0;
-          const isSlowest = i === rv.timings.length - 1;
-          const emoji = isSlowest ? '🦥' : (isFastest ? '⚡' : '');
-          return `
-            <div class="tempo-row">
-              <span class="badge-emoji">${emoji}</span>
-              <span class="nm">${escapeHtml(t.name)}${isSlowest?' <span style="font-weight:400;color:var(--stone)">&mdash; Faultier der Runde</span>':''}</span>
-              <span class="secs">${(t.ms/1000).toFixed(1)}s</span>
-            </div>
-          `;
-        }).join('')}
+      <div class="tempo-card">
+        <h2 style="font-family:var(--font-sans);font-size:16px;margin:0 0 10px">⏱️ Tempo-Check</h2>
+        <div class="tempo-list">
+          ${rv.timings.map((t,i) => {
+            const isFastest = i === 0;
+            const isSlowest = i === rv.timings.length - 1;
+            const emoji = isSlowest ? '🦥' : (isFastest ? '⚡' : '');
+            return `
+              <div class="tempo-row">
+                <span class="badge-emoji">${emoji}</span>
+                <span class="nm">${escapeHtml(t.name)}${isSlowest?' <span style="font-weight:400;color:var(--stone)">&mdash; Faultier der Runde</span>':''}</span>
+                <span class="secs">${(t.ms/1000).toFixed(1)}s</span>
+              </div>
+            `;
+          }).join('')}
+        </div>
       </div>
     ` : ''}
 
@@ -1082,7 +1174,7 @@ function render(){
 window.__np = {
   setTab(t){ ui.tab = t; ui.joinError=''; render(); },
   toggleRules(){ ui.rulesOpen = !ui.rulesOpen; render(); },
-  createRoom, joinRoom, leaveGame, startGame, submitBluff, selectGroup, submitVote, nextRound, copyInviteLink,
+  createRoom, joinRoom, leaveGame, startGame, submitBluff, selectGroup, submitVote, nextRound, copyInviteLink, markReady,
 };
 </script>
 </body>
